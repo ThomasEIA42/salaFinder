@@ -4,14 +4,15 @@ export type EstadoSala = "DISPONIBLE" | "MANTENIMIENTO";
 export type EstadoReserva = "pendiente" | "aprobada" | "rechazada" | "cancelada";
 
 export interface Sala {
-  id: number;
-  nombre: string;
-  tipo: "LABORATORIO" | "AULA" | "CANCHA";
-  capacidad: number;
-  edificio: string;
-  recursosPermitidos: string[];
-  requiereAprobacion: boolean;
-  estado: "DISPONIBLE" | "MANTENIMIENTO";
+  id: number
+  nombre: string
+  tipo: TipoSala
+  capacidad: number
+  edificio: string
+  recursosPermitidos: string[]
+  programasPermitidos: string[]
+  requiereAprobacion: boolean
+  estado: EstadoSala
 }
 
 export interface Reserva {
@@ -19,4 +20,10 @@ export interface Reserva {
   sala: Sala;
   fecha: string;
   estado: EstadoReserva;
+}
+export interface AuditLog {
+  id: number
+  usuario: string
+  accion: string
+  fecha: string
 }
