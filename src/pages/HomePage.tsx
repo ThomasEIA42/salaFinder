@@ -1,36 +1,62 @@
-
-import type { Reserva, Sala } from "../types/types"
+import type { Sala, Reserva } from "../types/types"
 
 type Props = {
   reservas: Reserva[]
   onReservar: (sala: Sala) => void
-  onCancelar: (id: number) => void
+  onCancelar: (reservaId: number) => void
   onLimpiar: () => void
 }
 
-function HomePage({ reservas, onReservar, onCancelar, onLimpiar }: Props) {
+const salas: Sala[] = [
+{
+id:1,
+nombre:"Sala A",
+tipo:"AULA",
+capacidad:30,
+edificio:"Edificio A",
+recursosPermitidos:["Proyector"],
+programasPermitidos:[],
+requiereAprobacion:false,
+estado:"DISPONIBLE"
+},
+{
+id:2,
+nombre:"Sala B",
+tipo:"LABORATORIO",
+capacidad:20,
+edificio:"Edificio B",
+recursosPermitidos:["Computadoras"],
+programasPermitidos:[],
+requiereAprobacion:false,
+estado:"DISPONIBLE"
+}
+]
 
-  return (
-    <div>
+function HomePage({ onReservar }: Props) {
 
-      <h1>Salas disponibles</h1>
+return (
 
-      <button onClick={onLimpiar}>
-        Limpiar reservas
-      </button>
+<div>
 
-      {reservas.map((r) => (
-        <div key={r.id}>
-          <p>{r.sala.nombre}</p>
+<h1>Salas disponibles</h1>
 
-          <button onClick={() => onCancelar(r.id)}>
-            Cancelar
-          </button>
-        </div>
-      ))}
+{salas.map((sala)=>(
+<div key={sala.id}>
 
-    </div>
-  )
+<h3>{sala.nombre}</h3>
+
+<p>Capacidad: {sala.capacidad}</p>
+
+<button onClick={()=>onReservar(sala)}>
+Reservar
+</button>
+
+</div>
+))}
+
+</div>
+
+)
 }
 
 export default HomePage
