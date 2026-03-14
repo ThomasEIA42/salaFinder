@@ -1,4 +1,4 @@
-export type TipoSala = "LABORATORIO" | "AULA" | "CANCHA";
+export type TipoSala = "LABORATORIO" | "AULA" | "AUDITORIO";
 export type EstadoSala = "DISPONIBLE" | "MANTENIMIENTO";
 
 export type EstadoReserva = "pendiente" | "aprobada" | "rechazada" | "cancelada";
