@@ -1,4 +1,4 @@
-import { FiMusic, FiShoppingCart, FiLogIn } from "react-icons/fi";
+import { FiMusic, FiLogIn } from "react-icons/fi";
 import { NavLink } from "react-router-dom";
 
 export default function Navbar() {
@@ -13,30 +13,36 @@ export default function Navbar() {
           <h2 className="text-lg font-semibold">Sala Finder</h2>
         </div>
 
-        <nav className="flex items-center gap-4 text-sm text-muted" aria-label="Primary navigation">
-          {/* Enlace Home */}
-          <NavLink 
-            to="/" 
-            className={({ isActive }) => (isActive ? `${linkBase} ${active}` : linkBase)}
+        <nav
+          className="flex items-center gap-4 text-sm text-muted"
+          aria-label="Primary navigation"
+        >
+          {/* Home */}
+          <NavLink
+            to="/"
+            className={({ isActive }) =>
+              isActive ? `${linkBase} ${active}` : linkBase
+            }
           >
             Home
           </NavLink>
 
-          {/* Enlace Cart */}
-          <NavLink 
-            to="/cart" 
-            className={({ isActive }) => (isActive ? `${linkBase} ${active}` : linkBase)}
+          {/* My Reservations */}
+          <NavLink
+            to="/reservations"
+            className={({ isActive }) =>
+              isActive ? `${linkBase} ${active}` : linkBase
+            }
           >
-            <span className="inline-flex items-center gap-2">
-              <FiShoppingCart />
-              Cart
-            </span>
+            My Reservations
           </NavLink>
 
-          {/* Enlace Login */}
-          <NavLink 
-            to="/login" 
-            className={({ isActive }) => (isActive ? `${linkBase} ${active}` : linkBase)}
+          {/* Login */}
+          <NavLink
+            to="/login"
+            className={({ isActive }) =>
+              isActive ? `${linkBase} ${active}` : linkBase
+            }
           >
             <span className="inline-flex items-center gap-2">
               <FiLogIn />

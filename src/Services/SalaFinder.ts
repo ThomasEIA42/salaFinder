@@ -1,8 +1,9 @@
 import type { Sala, EstadoReserva, TipoSala, EstadoSala } from "../types/types";
+
 const BASE_URL = "https://jsonplaceholder.typicode.com/posts";
 
 // catálogos falsos
-const TIPOS: TipoSala[] = ["LABORATORIO", "AULA", "CANCHA"];
+const TIPOS: TipoSala[] = ["LABORATORIO", "AULA", "AUDITORIO"];
 
 const EDIFICIOS = [
   "Edificio Ingeniería",
@@ -34,7 +35,6 @@ function mapPostASala(post: {
   body: string;
   userId: number;
 }): Sala {
-
   const tipo = TIPOS[post.id % TIPOS.length];
   const edificio = EDIFICIOS[post.id % EDIFICIOS.length];
   const recursos = RECURSOS[post.id % RECURSOS.length];
@@ -51,15 +51,14 @@ function mapPostASala(post: {
     tipo,
     capacidad,
     edificio,
-    recursos,
-    programasPermitidos,
+    recursosPermitidos: recursos,
+    programasPermitidos: programasPermitidos,
     requiereAprobacion: post.id % 2 === 0,
     estado
   };
 }
 
 export async function obtenerSalas(): Promise<Sala[]> {
-
   const res = await fetch(BASE_URL);
 
   if (!res.ok) {
@@ -77,7 +76,6 @@ export async function obtenerSalas(): Promise<Sala[]> {
 }
 
 export async function obtenerSalaPorId(id: number): Promise<Sala> {
-
   const res = await fetch(`${BASE_URL}/${id}`);
 
   if (!res.ok) {

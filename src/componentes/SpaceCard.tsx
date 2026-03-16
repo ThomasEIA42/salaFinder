@@ -1,23 +1,19 @@
-import React from 'react';
-import { FiUsers, FiMapPin, FiInfo, FiCheckCircle } from "react-icons/fi";
+import { FiUsers, FiMapPin, FiInfo } from "react-icons/fi";
 
-/**
- * @typedef {Object} SpaceProps
- * @property {Object} space
- * @property {string} space.id
- * @property {string} space.name
- * @property {string} space.type
- * @property {number} space.capacity
- * @property {string} space.building
- * @property {string[]} space.resources
- * @property {boolean} space.requiresApproval
- * @property {(id: string) => void} onSelect
- */
+interface ISpaceCard {
+  space: {
+    id: string;
+    name: string;
+    type: string;
+    capacity: number;
+    building: string;
+    resources: string[];
+    requiresApproval: boolean;
+  };
+  onSelect: (id: string) => void;
+}
 
-/**
- * @param {SpaceProps} props
- */
-export default function SpaceCard({ space, onSelect }) {
+export default function SpaceCard({ space, onSelect }: ISpaceCard) {
   return (
     <div className="border border-border bg-surface rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-3">
@@ -46,7 +42,7 @@ export default function SpaceCard({ space, onSelect }) {
       </div>
 
       <div className="mb-4">
-        <p className="text-xs font-semibold mb-2 uppercase text-gray-400">Recursos incluidos:</p>
+        <p className="text-xs font-semibold mb-2 uppercase text-gray-400">Recursos:</p>
         <div className="flex flex-wrap gap-1">
           {space.resources.map((res, index) => (
             <span key={index} className="text-[11px] bg-gray-100 px-2 py-1 rounded border border-gray-200">
@@ -58,7 +54,7 @@ export default function SpaceCard({ space, onSelect }) {
 
       <button 
         onClick={() => onSelect(space.id)}
-        className="w-full bg-brand-700 text-white py-2 rounded-lg font-semibold hover:bg-opacity-90 flex items-center justify-center gap-2 transition-all"
+        className="w-full bg-brand-700 text-white py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all"
       >
         Reservar Espacio
       </button>
