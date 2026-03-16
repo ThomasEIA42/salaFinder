@@ -1,4 +1,6 @@
-import { FiMusic, FiLogIn } from "react-icons/fi";
+
+import { BiBomb, BiLogIn } from "react-icons/bi";
+
 import { NavLink } from "react-router-dom";
 
 export default function Navbar() {
@@ -9,7 +11,7 @@ export default function Navbar() {
     <header className="border-b border-border bg-surface">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <div className="flex items-center gap-2 text-text">
-          <FiMusic className="text-brand-700" />
+          <BiBomb className="text-brand-700" />
           <h2 className="text-lg font-semibold">Sala Finder</h2>
         </div>
 
@@ -34,7 +36,7 @@ export default function Navbar() {
               isActive ? `${linkBase} ${active}` : linkBase
             }
           >
-            My Reservations
+            Mis Reservaciones
           </NavLink>
 
           {/* Login */}
@@ -45,7 +47,7 @@ export default function Navbar() {
             }
           >
             <span className="inline-flex items-center gap-2">
-              <FiLogIn />
+              <BiLogIn />
               Log In
             </span>
           </NavLink>
