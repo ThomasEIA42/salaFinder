@@ -2,10 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Sala } from "../types/types";
 import { useApp } from "../context/AppContext";
-import {
-  fakeApi,
-  SIMULATE_SALAS_ERROR_KEY,
-} from "../fakeapi/FakeApi";
+import { fakeApi } from "../fakeapi/FakeApi";
 import { etiquetaTipoSala } from "../utils/tipoSala";
 
 export default function HomePage() {
@@ -99,11 +96,6 @@ export default function HomePage() {
     cerrarModal();
   }
 
-  function simularErrorApi() {
-    sessionStorage.setItem(SIMULATE_SALAS_ERROR_KEY, "1");
-    cargarSalas();
-  }
-
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="mb-2 text-2xl font-bold">Espacios disponibles</h1>
@@ -170,17 +162,6 @@ export default function HomePage() {
         <p className="text-sm text-muted-foreground md:ml-auto">
           Resultados: {filtradas.length}
         </p>
-      </div>
-
-      {}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={simularErrorApi}
-          className="text-xs text-muted-foreground underline"
-        >
-          Demo: simular fallo al cargar espacios
-        </button>
       </div>
 
       {loading && (

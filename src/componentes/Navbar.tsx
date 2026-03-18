@@ -7,8 +7,8 @@ export default function Navbar() {
   const { user, setUser } = useApp();
   const navigate = useNavigate();
 
-  const linkBase = "text-sm text-muted hover:text-text";
-  const active = "text-brand-700 font-semibold text-text";
+  const linkBase = "navLink";
+  const active = "navLinkActive";
 
   function handleLogout() {
     fakeApi.logout();
@@ -25,7 +25,7 @@ export default function Navbar() {
         </div>
 
         <nav
-          className="flex flex-wrap items-center gap-4 text-sm text-muted"
+          className="top-nav flex flex-wrap items-center gap-4 text-sm text-muted"
           aria-label="Navegación principal"
         >
           <NavLink
@@ -68,7 +68,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={handleLogout}
-              className={`inline-flex items-center gap-1 ${linkBase}`}
+              className="navButton navButton--ghost"
             >
               <BiLogOut aria-hidden />
               Salir
@@ -77,9 +77,7 @@ export default function Navbar() {
             <>
               <NavLink
                 to="/login"
-                className={({ isActive }) =>
-                  isActive ? `${linkBase} ${active}` : linkBase
-                }
+                className="navButton navButton--ghost"
               >
                 <span className="inline-flex items-center gap-2">
                   <BiLogIn aria-hidden />
@@ -88,9 +86,7 @@ export default function Navbar() {
               </NavLink>
               <NavLink
                 to="/signup"
-                className={({ isActive }) =>
-                  isActive ? `${linkBase} ${active}` : linkBase
-                }
+                className="navButton navButton--primary"
               >
                 Sign up
               </NavLink>

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
+import { describe, expect, test, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
@@ -33,6 +33,10 @@ function wrap(ui: ReactNode) {
   );
 }
 
+/**
+ * Test de integración de UI: monta HomePage con router y contexto real.
+ * Simula la API de salas con un mock para tener datos predecibles (una sola sala “Sala A”).
+ */
 describe("HomePage", () => {
   beforeEach(() => {
     localStorage.removeItem(RESERVAS_KEY);
@@ -45,7 +49,13 @@ describe("HomePage", () => {
     vi.restoreAllMocks();
   });
 
-  it("abre el modal y bloquea reserva duplicada (misma sala/fecha/hora)", async () => {
+  /**
+   * Flujo completo en pantalla:
+   * 1) Ya existe en localStorage una reserva para Sala A el 16/03 en 09:00–11:00.
+   * 2) El usuario abre “Reservar” otra vez con la misma fecha y franja.
+   * 3) La app debe mostrar el mensaje de error (alert) de reserva duplicada, sin crear otra reserva.
+   */
+  test("abre el modal y bloquea reserva duplicada (misma sala/fecha/hora)", async () => {
     const user = userEvent.setup();
     const salaA = mkSala(1, "Sala A", "SALON");
     const reservas: Reserva[] = [
