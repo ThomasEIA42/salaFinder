@@ -1,55 +1,54 @@
-# SalaFinder
+# salaFinder  
 
-Aplicación web para buscar y **reservar salas, laboratorios y auditorios**. Incluye flujos del **parcial**: fake API async (carga / éxito / error), filtros, toasts, roles (usuario / admin), auditoría solo para admin y reservas persistidas en `localStorage`.
+<p align="center">  
+  <b>Plataforma web para la gestión y búsqueda de salas</b><br>  
+  Encuentra, visualiza y administra espacios de manera fácil e intuitiva  
+</p>
 
-## Tecnologías
+---
 
-- **React 19** + **TypeScript**
-- **Vite 7**
-- **React Router 7**
-- **Tailwind CSS 4**
-- **Vitest** + Testing Library
+## Descripción  
 
-## Checklist Parcial (resumen)
+salaFinder es una aplicación web desarrollada con React que permite a los usuarios buscar, visualizar y gestionar salas dentro de una organización.  
 
-| Requisito | Dónde |
-|-----------|--------|
-| Listado con carga / error / reintentar | `HomePage`, `CreateReservation`, `DetalleSala`, `AuditPage` |
-| Simular fallo API espacios | Botón demo en home → `sessionStorage` + `FakeApi` |
-| Filtros (nombre, tipo, solo disponibles) | `HomePage` |
-| Reservas: conflicto fecha/hora | Home, detalle, `/reservar` |
-| Mantenimiento: no reservable | Home, detalle, nueva reserva |
-| Login / registro fake + loading + errores | `Login`, `SignUp` → `fakeApi` |
-| Rol admin: auditoría, aprobar/rechazar | `/audit`, `MyReservations` |
-| Toasts | `AppContext` + `Toast` |
-| Persistencia reservas | `localStorage` (`salaFinder.reservas`) |
+El proyecto está enfocado en ofrecer una experiencia clara, rápida y organizada, utilizando una arquitectura moderna basada en componentes y manejo de estado global.  
 
-## Cuentas de prueba (login fake)
+---
 
-- **Admin:** `admin@test.com` (cualquier contraseña) → menú **Auditoría**
-- **Usuario:** `demo@test.com` o cualquier email de la lista mock en `fakeapi/data.ts`
+## ¿Qué hace este proyecto?  
 
-Registro (`/signup`) crea sesión local sin backend.
+- Permite consultar salas disponibles  
+- Muestra información detallada de cada sala  
+- Gestiona datos de forma dinámica  
+- Usa componentes reutilizables  
+- Simula datos mediante una API  
 
-## Scripts
+---
+
+## Tecnologías  
+
+<p align="center">
+
+| Tecnología     | Uso                          |
+|--------------|------------------------------|
+| React        | Construcción de la interfaz  |
+| Context API  | Manejo de estado global      |
+| CSS          | Estilos y diseño             |
+| Fake API     | Simulación de backend        |
+
+</p>
+
+---
+
+## Estructura del proyecto  
 
 ```bash
-npm install
-npm run dev          # desarrollo
-npm run build        # producción
-npm run test:run     # tests
-npm run lint
-```
-
-## Estructura principal
-
-```
 src/
-├── context/AppContext.tsx   # reservas, usuario, toasts
-├── fakeapi/FakeApi.ts       # API simulada (delay, errores demo)
-├── pages/                   # Home, detalle, reservas, login, audit…
-├── componentes/             # Navbar, Toast, Button…
-└── Data/AuditLog.tsx        # tabla de historial
-```
-
-La entrega sigue una estructura tipo [concerthub](https://github.com/Silvia-Suarez/concerthub) (Vite + React + rutas), adaptada al dominio **espacios y reservas**.
+│
+├── assets/        # Recursos (imágenes, íconos)
+├── componentes/   # Componentes reutilizables
+├── context/       # Estado global (Context API)
+├── fakeapi/       # Datos simulados
+├── pages/         # Vistas principales
+├── services/      # Lógica de negocio
+└── data/          # Datos adicionales
