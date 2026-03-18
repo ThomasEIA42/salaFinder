@@ -1,13 +1,13 @@
-import type { Sala, EstadoReserva, TipoSala, EstadoSala } from "../types/types";
+import type { Sala, TipoSala, EstadoSala } from "../types/types";
 
 const BASE_URL = "https://jsonplaceholder.typicode.com/posts";
 
 // catálogos falsos
-const TIPOS: TipoSala[] = ["LABORATORIO", "AULA", "AUDITORIO"];
+const TIPOS: TipoSala[] = ["LABORATORIO", "SALON", "AUDITORIO"];
 
 const EDIFICIOS = [
   "Edificio Ingeniería",
-  "Edificio Ciencias",
+  "Edificio Medicina",
   "Biblioteca Central",
   "Centro Deportivo",
   "Bloque Administrativo"
@@ -16,17 +16,17 @@ const EDIFICIOS = [
 const RECURSOS = [
   ["Video beam", "Tablero"],
   ["Computadores", "Video beam"],
-  ["Sistema de sonido"],
-  ["Aire acondicionado"],
+  ["Sillas individuales"],
+  ["Mesas"],
   ["Tablero"]
 ];
 
 const PROGRAMAS = [
   ["Ingeniería"],
   ["Administración"],
-  ["Artes"],
+  ["Sala gamer"],
   ["Todos"],
-  ["Ciencias"]
+  ["Medicina"]
 ];
 
 function mapPostASala(post: {

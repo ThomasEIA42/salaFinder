@@ -1,73 +1,55 @@
-# React + TypeScript + Vite
+# SalaFinder
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación web para buscar y **reservar salas, laboratorios y auditorios**. Incluye flujos del **parcial**: fake API async (carga / éxito / error), filtros, toasts, roles (usuario / admin), auditoría solo para admin y reservas persistidas en `localStorage`.
 
-Currently, two official plugins are available:
+## Tecnologías
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 19** + **TypeScript**
+- **Vite 7**
+- **React Router 7**
+- **Tailwind CSS 4**
+- **Vitest** + Testing Library
 
-## React Compiler
+## Checklist Parcial (resumen)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Requisito | Dónde |
+|-----------|--------|
+| Listado con carga / error / reintentar | `HomePage`, `CreateReservation`, `DetalleSala`, `AuditPage` |
+| Simular fallo API espacios | Botón demo en home → `sessionStorage` + `FakeApi` |
+| Filtros (nombre, tipo, solo disponibles) | `HomePage` |
+| Reservas: conflicto fecha/hora | Home, detalle, `/reservar` |
+| Mantenimiento: no reservable | Home, detalle, nueva reserva |
+| Login / registro fake + loading + errores | `Login`, `SignUp` → `fakeApi` |
+| Rol admin: auditoría, aprobar/rechazar | `/audit`, `MyReservations` |
+| Toasts | `AppContext` + `Toast` |
+| Persistencia reservas | `localStorage` (`salaFinder.reservas`) |
 
-## Expanding the ESLint configuration
+## Cuentas de prueba (login fake)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Admin:** `admin@test.com` (cualquier contraseña) → menú **Auditoría**
+- **Usuario:** `demo@test.com` o cualquier email de la lista mock en `fakeapi/data.ts`
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Registro (`/signup`) crea sesión local sin backend.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Scripts
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev          # desarrollo
+npm run build        # producción
+npm run test:run     # tests
+npm run lint
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Estructura principal
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+src/
+├── context/AppContext.tsx   # reservas, usuario, toasts
+├── fakeapi/FakeApi.ts       # API simulada (delay, errores demo)
+├── pages/                   # Home, detalle, reservas, login, audit…
+├── componentes/             # Navbar, Toast, Button…
+└── Data/AuditLog.tsx        # tabla de historial
+```
+
+La entrega sigue una estructura tipo [concerthub](https://github.com/Silvia-Suarez/concerthub) (Vite + React + rutas), adaptada al dominio **espacios y reservas**.
