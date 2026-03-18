@@ -1,60 +1,70 @@
-import { useState } from "react"
-import type { Reserva } from "../types/types"
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { useApp } from "../context/AppContext";
 
-type Props = {
-  reservas: Reserva[]
-}
+export default function Calendar() {
+  const { reservas } = useApp();
+  const [fechaSeleccionada, setFechaSeleccionada] = useState("");
 
-function Calendar({ reservas }: Props) {
-
-  const [fechaSeleccionada, setFechaSeleccionada] = useState("")
-
-  const reservasDelDia = reservas.filter(
-    (r) => r.fecha === fechaSeleccionada
-  )
+  const reservasDelDia = useMemo(() => {
+    if (!fechaSeleccionada) return [];
+    return reservas
+      .filter((r) => r.fecha === fechaSeleccionada)
+      .slice()
+      .sort((a, b) => (a.timeSlot > b.timeSlot ? 1 : -1));
+  }, [reservas, fechaSeleccionada]);
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold mb-2">Calendario de reservas</h1>
+      <p className="text-sm text-muted-foreground mb-6">
+        Selecciona una fecha para ver qué reservas hay ese día (demo).
+      </p>
 
-      <h1 className="text-2xl font-bold mb-4">
-        Calendario de Reservas
-      </h1>
+      <div className="card">
+        <label className="block text-sm font-medium mb-2" htmlFor="cal-fecha">
+          Fecha
+        </label>
+        <input
+          id="cal-fecha"
+          type="date"
+          value={fechaSeleccionada}
+          onChange={(e) => setFechaSeleccionada(e.target.value)}
+        />
 
-      <input
-        type="date"
-        value={fechaSeleccionada}
-        onChange={(e) => setFechaSeleccionada(e.target.value)}
-        className="border p-2 mb-4"
-      />
+        <div className="mt-4 flex items-end justify-between gap-3">
+          <h2 className="text-lg font-semibold">Reservas del día</h2>
+          <Link to="/reservations" className="text-sm text-brand-700 underline">
+            Ir a “Mis reservaciones”
+          </Link>
+        </div>
 
-      <h2 className="text-lg font-semibold mb-2">
-        Reservas del día
-      </h2>
-
-      {reservasDelDia.length === 0 ? (
-        <p>No hay reservas para esta fecha</p>
-      ) : (
-        <ul>
-
-          {reservasDelDia.map((r) => (
-            <li key={r.id} className="border p-2 mb-2">
-
-              <p>
-                <strong>Sala:</strong> {r.sala.nombre}
-              </p>
-
-              <p>
-                <strong>Estado:</strong> {r.estado}
-              </p>
-
-            </li>
-          ))}
-
-        </ul>
-      )}
-
+        {!fechaSeleccionada ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            Elige una fecha para ver resultados.
+          </p>
+        ) : reservasDelDia.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            No hay reservas para esta fecha.
+          </p>
+        ) : (
+          <ul className="mt-3 space-y-2">
+            {reservasDelDia.map((r) => (
+              <li
+                key={r.id}
+                className="rounded border border-border bg-surface p-3"
+              >
+                <p className="text-sm font-medium">
+                  {r.sala.nombre} — {r.timeSlot}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Estado: <strong>{r.estado}</strong>
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
-  )
+  );
 }
-
-export default Calendar

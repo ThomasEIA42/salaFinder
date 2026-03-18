@@ -183,6 +183,36 @@ button:active {
   box-shadow: none;
 }
 
+/* Links con look de botón (para NavLink/Link) */
+.btn-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: var(--brand-700);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.2s ease, transform 0.1s ease,
+    box-shadow 0.2s ease;
+}
+
+.btn-link:hover {
+  background-color: var(--brand-700-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.4);
+}
+
+.btn-link:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
 /* Inputs y selects */
 input,
 select,

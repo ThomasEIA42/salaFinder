@@ -11,6 +11,8 @@ import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import NotFoundPage from "./pages/NotFoundPage";
 import AuditPage from "./pages/AuditPage";
+import Dashboard from "./pages/Dashboard";
+import Calendar from "./pages/Calendar";
 
 function AppRoutes() {
   return (
@@ -22,6 +24,8 @@ function AppRoutes() {
         <Route path="/reservations" element={<MyReservations />} />
         <Route path="/sala/:id" element={<DetalleSala />} />
         <Route path="/reservar" element={<CrearReserva />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/calendar" element={<Calendar />} />
         <Route path="/audit" element={<AuditPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />

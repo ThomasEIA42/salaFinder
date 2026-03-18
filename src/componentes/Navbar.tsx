@@ -52,6 +52,22 @@ export default function Navbar() {
           >
             Nueva reserva
           </NavLink>
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) =>
+              isActive ? `${linkBase} ${active}` : linkBase
+            }
+          >
+            Dashboard
+          </NavLink>
+          <NavLink
+            to="/calendar"
+            className={({ isActive }) =>
+              isActive ? `${linkBase} ${active}` : linkBase
+            }
+          >
+            Calendario
+          </NavLink>
 
           {user?.role === "admin" && (
             <NavLink

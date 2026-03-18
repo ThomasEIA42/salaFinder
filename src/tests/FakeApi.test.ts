@@ -29,7 +29,7 @@ describe("FakeApi", () => {
     );
   });
 
-  // Tras hacer login y luego logout, no debe quedar usuario en sesión (getCurrentUser = null).
+  // Tras hacer login y luego logout, no debe quedar usuario en sesión entonces getCurrentUser() debe retornar null.
   test("logout elimina la sesión", async () => {
     await fakeApi.login("admin@test.com", "1234");
     fakeApi.logout();
