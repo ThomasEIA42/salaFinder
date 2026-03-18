@@ -1,59 +1,90 @@
-import type { Reserva } from "../types/types";
+import { Link } from "react-router-dom";
+import { useApp } from "../context/AppContext";
 
-type Props = {
-  reservas: Reserva[];
-  onCancelar: (reservaId: number) => void;
-  onLimpiar: () => void;
-};
+export default function MyReservations() {
+  const {
+    reservas,
+    user,
+    cancelarReserva,
+    limpiarReservas,
+    setEstadoReserva,
+  } = useApp();
 
-function MyReservations({ reservas, onCancelar, onLimpiar }: Props) {
+  const esAdmin = user?.role === "admin";
+
   return (
-    <div className="p-6">
-      <h1 className="mb-2 text-2xl font-bold">Mis Reservacaciones</h1>
+    <div className="p-6 max-w-3xl mx-auto">
+      <h1 className="mb-2 text-2xl font-bold">Mis reservaciones</h1>
       <p className="mb-6 text-sm text-muted-foreground">
-        Ahora con esta web podras reservas tus salas mas comodamente.
+        {esAdmin
+          ? "Como administrador puedes aprobar o rechazar reservas pendientes."
+          : "Aquí ves tus reservas guardadas."}
       </p>
 
       {reservas.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No tienes ninguna reserva aún.
-        </p>
+        <div className="rounded-lg border border-dashed border-border p-8 text-center">
+          <p className="text-muted-foreground mb-4">
+            No tienes reservas todavía.
+          </p>
+          <Link to="/" className="text-brand-700 font-semibold underline">
+            Ver espacios disponibles
+          </Link>
+        </div>
       ) : (
         <>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {reservas.map((r) => (
               <li
                 key={r.id}
-                className="flex items-center justify-between rounded border border-border bg-surface p-3"
+                className="flex flex-col gap-2 rounded border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
                   <p className="text-sm font-medium">
-                    {r.sala.nombre} — {r.fecha}
+                    {r.sala.nombre} — {r.fecha} ({r.timeSlot})
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Status: {r.estado}
+                    Estado: <strong>{r.estado}</strong>
                   </p>
                 </div>
-                <button
-                  onClick={() => onCancelar(r.id)}
-                  className="text-xs font-semibold text-red-500 hover:underline bg-transparent px-0 py-0"
-                >
-                  Cancel
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  {esAdmin && r.estado === "pendiente" && (
+                    <>
+                      <button
+                        type="button"
+                        className="bg-emerald-800 text-white text-xs px-3 py-1.5 rounded"
+                        onClick={() => setEstadoReserva(r.id, "aprobada")}
+                      >
+                        Aprobar
+                      </button>
+                      <button
+                        type="button"
+                        className="bg-amber-900 text-white text-xs px-3 py-1.5 rounded"
+                        onClick={() => setEstadoReserva(r.id, "rechazada")}
+                      >
+                        Rechazar
+                      </button>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => cancelarReserva(r.id)}
+                    className="text-xs text-red-400 underline bg-transparent px-0"
+                  >
+                    Cancelar reserva
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
           <button
-            onClick={onLimpiar}
-            className="mt-3 text-xs font-semibold text-brand-700 hover:underline bg-transparent px-0 py-0"
+            type="button"
+            onClick={limpiarReservas}
+            className="mt-4 text-xs text-muted-foreground underline"
           >
-            Limpiar todo
+            Limpiar todas (demo)
           </button>
         </>
       )}
     </div>
   );
 }
-
-export default MyReservations;
-
