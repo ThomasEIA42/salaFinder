@@ -1,5 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
-import type { Reserva, Sala } from "../types/types"
+import type { Reserva, Sala } from "../types/types";
 
 type Props = {
   salas: Sala[]
