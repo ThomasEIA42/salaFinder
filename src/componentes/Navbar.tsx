@@ -7,8 +7,6 @@ export default function Navbar() {
   const { user, setUser } = useApp();
   const navigate = useNavigate();
 
-  const linkBase = "text-sm text-muted-foreground";
-  const active = "text-sm font-semibold";
   const linkBase = "navLink";
   const active = "navLinkActive";
 
@@ -18,61 +16,52 @@ export default function Navbar() {
     navigate("/");
   }
 
+  function navClass(isActive: boolean) {
+    return isActive ? `${linkBase} ${active}` : linkBase;
+  }
+
   return (
     <header className="sf-header">
       <div className="sf-header-inner">
-        <div className="flex items-center gap-2">
-          <BiBomb aria-hidden />
-          <h2 className="text-lg font-semibold">Sala Finder</h2>
-          {user ? (
-            <span className="text-xs text-muted-foreground">
-              {user.role === "admin" ? "Admin" : "Usuario"} · {user.email}
-            </span>
-          ) : null}
+        <div className="sf-brand">
+          <span className="sf-logo" aria-hidden>
+            <BiBomb />
+          </span>
+          <div>
+            <h2 className="sf-brand-title">Sala Finder</h2>
+            {user ? (
+              <span className="sf-brand-meta">
+                {user.role === "admin" ? "Admin" : "Usuario"} · {user.email}
+              </span>
+            ) : null}
+          </div>
         </div>
 
-        <nav
-          className="sf-nav"
-          className="top-nav flex flex-wrap items-center gap-4 text-sm text-muted"
-          aria-label="Navegación principal"
-        >
-          <NavLink
-            to="/"
-            className={({ isActive }) =>
-              isActive ? `${active}` : linkBase
-            }
-          >
+        <nav className="sf-nav" aria-label="Navegación principal">
+          <NavLink to="/" className={({ isActive }) => navClass(isActive)}>
             Espacios
           </NavLink>
           <NavLink
             to="/reservations"
-            className={({ isActive }) =>
-              isActive ? `${active}` : linkBase
-            }
+            className={({ isActive }) => navClass(isActive)}
           >
             Mis reservaciones
           </NavLink>
           <NavLink
             to="/reservar"
-            className={({ isActive }) =>
-              isActive ? `${active}` : linkBase
-            }
+            className={({ isActive }) => navClass(isActive)}
           >
             Nueva reserva
           </NavLink>
           <NavLink
             to="/dashboard"
-            className={({ isActive }) =>
-              isActive ? `${linkBase} ${active}` : linkBase
-            }
+            className={({ isActive }) => navClass(isActive)}
           >
             Dashboard
           </NavLink>
           <NavLink
             to="/calendar"
-            className={({ isActive }) =>
-              isActive ? `${linkBase} ${active}` : linkBase
-            }
+            className={({ isActive }) => navClass(isActive)}
           >
             Calendario
           </NavLink>
@@ -80,9 +69,7 @@ export default function Navbar() {
           {user?.role === "admin" && (
             <NavLink
               to="/audit"
-              className={({ isActive }) =>
-                isActive ? `${active}` : linkBase
-              }
+              className={({ isActive }) => navClass(isActive)}
             >
               Auditoría
             </NavLink>
@@ -92,7 +79,6 @@ export default function Navbar() {
             <button
               type="button"
               onClick={handleLogout}
-              className="inline-flex items-center gap-2 bg-transparent"
               className="navButton navButton--ghost"
             >
               <BiLogOut aria-hidden />
@@ -102,21 +88,13 @@ export default function Navbar() {
             <>
               <NavLink
                 to="/login"
-                className={({ isActive }) =>
-                  isActive ? `${active}` : linkBase
-                }
                 className="navButton navButton--ghost"
               >
-                <span className="inline-flex items-center gap-2">
-                  <BiLogIn aria-hidden />
-                  Log in
-                </span>
+                <BiLogIn aria-hidden />
+                Log in
               </NavLink>
               <NavLink
                 to="/signup"
-                className={({ isActive }) =>
-                  isActive ? `${active}` : linkBase
-                }
                 className="navButton navButton--primary"
               >
                 Sign up

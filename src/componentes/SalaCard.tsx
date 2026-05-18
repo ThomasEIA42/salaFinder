@@ -1,51 +1,59 @@
 import { Link } from "react-router-dom";
 import type { Sala } from "../types/types";
+import { useApp } from "../context/AppContext";
+import { loginRedirectState, reservarReturnTo } from "../utils/authRedirect";
 import { etiquetaTipoSala } from "../utils/tipoSala";
 
 export default function SalaCard({ sala }: { sala: Sala }) {
+  const { user } = useApp();
+  const disponible = sala.estado === "DISPONIBLE";
+
   return (
-    <article className="card relative">
-      <div className="absolute right-3 top-3">
+    <article className="card">
+      <div className="flex justify-between items-start gap-3 mb-3">
+        <div className="min-w-0 flex-1 pr-2">
+          <h3 className="text-lg font-semibold leading-tight">{sala.nombre}</h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            {etiquetaTipoSala(sala.tipo)}
+          </p>
+        </div>
         <span
-          className={`rounded px-2 py-0.5 text-xs font-semibold ${
-            sala.estado === "DISPONIBLE"
-              ? "bg-emerald-900/60 text-emerald-200"
-              : "bg-amber-900/60 text-amber-200"
+          className={`badge shrink-0 ${
+            disponible ? "badge--success" : "badge--warning"
           }`}
         >
-          {sala.estado === "DISPONIBLE" ? "DISPONIBLE" : "MANTENIMIENTO"}
+          {disponible ? "Disponible" : "Mantenimiento"}
         </span>
       </div>
 
-      <h3 className="text-lg font-semibold pr-24">{sala.nombre}</h3>
-      <p className="text-xs text-muted-foreground mb-1">
-        {etiquetaTipoSala(sala.tipo)}
-      </p>
       <p className="text-sm text-muted-foreground mb-1">
-        Capacidad: {sala.capacidad} personas
+        Capacidad: <strong className="font-medium" style={{ color: "var(--text-main)" }}>{sala.capacidad}</strong> personas
       </p>
-      <p className="text-xs text-muted-foreground mb-3">{sala.edificio}</p>
+      <p className="text-xs text-muted-foreground mb-4">{sala.edificio}</p>
 
-      <div className="flex justify-between items-center mt-2">
+      <div className="flex justify-between items-center gap-2 pt-3 border-t border-border">
         <Link
           to={`/sala/${sala.id}`}
           className="text-xs font-semibold text-brand-700 hover:underline"
         >
-          Ver detalle
+          Ver detalle →
         </Link>
-        {sala.estado === "DISPONIBLE" ? (
-          <Link
-            to={`/reservar?salaId=${sala.id}`}
-            className="btn-link"
-          >
-            Reservar
-          </Link>
+        {disponible ? (
+          user ? (
+            <Link to={`/reservar?salaId=${sala.id}`} className="btn-link">
+              Reservar
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              state={loginRedirectState(reservarReturnTo(sala.id))}
+              className="btn-link"
+            >
+              Reservar
+            </Link>
+          )
         ) : (
-          <button
-            type="button"
-            disabled
-            className="opacity-50 cursor-not-allowed"
-          >
+          <button type="button" disabled className="btn-ghost text-xs">
             No disponible
           </button>
         )}
@@ -53,4 +61,3 @@ export default function SalaCard({ sala }: { sala: Sala }) {
     </article>
   );
 }
-

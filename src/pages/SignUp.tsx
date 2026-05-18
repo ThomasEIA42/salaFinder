@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { FiUserPlus } from "react-icons/fi";
 import Button from "../componentes/Button";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import type { LoginRedirectState } from "../utils/authRedirect";
 import { fakeApi } from "../fakeapi/FakeApi";
 import { useApp } from "../context/AppContext";
+import { EIA_EMAIL_DOMAIN, EIA_EMAIL_ERROR, isEmailEia } from "../utils/emailEia";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
@@ -13,6 +15,8 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const { setUser, showToast } = useApp();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectFrom = (location.state as LoginRedirectState | null)?.from;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,13 +28,20 @@ export default function SignUpPage() {
       setError("Las contraseñas no coinciden.");
       return;
     }
+    if (!isEmailEia(email)) {
+      setError(EIA_EMAIL_ERROR);
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
       const user = await fakeApi.register(email.trim(), password);
       setUser(user);
       showToast("Cuenta creada. Bienvenido.", "success");
-      navigate("/");
+      const destino = redirectFrom
+        ? `${redirectFrom.pathname}${redirectFrom.search ?? ""}`
+        : "/";
+      navigate(destino, { replace: true });
     } catch (err) {
       const msg =
         err instanceof Error ? err.message : "No se pudo registrar.";
@@ -42,35 +53,50 @@ export default function SignUpPage() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-6 py-10">
-      <section className="card">
-        <div className="flex items-center gap-2 text-xl">
-          <FiUserPlus aria-hidden />
-          <h1 className="font-semibold">Registro</h1>
+    <main className="page mx-auto max-w-md">
+      <section className="card card--static">
+        <div className="auth-header">
+          <span className="sf-logo auth-header__icon">
+            <FiUserPlus aria-hidden />
+          </span>
+          <h1 className="auth-header__title">Registro</h1>
         </div>
 
-        <p className="mt-2 text-sm text-muted-foreground">
-          Crea una cuenta de demostración. Usa cualquier email y contraseña.
+        <p className="auth-hint text-sm text-muted-foreground">
+          Solo se permiten correos institucionales{" "}
+          <strong>@{EIA_EMAIL_DOMAIN}</strong> (ej.{" "}
+          <code
+            className="text-xs px-1.5 py-0.5 rounded"
+            style={{ background: "rgba(148,163,184,0.12)" }}
+          >
+            nombre.apellido@{EIA_EMAIL_DOMAIN}
+          </code>
+          ).
         </p>
 
-        <form className="mt-4 flex flex-col gap-3 bg-transparent p-0 border-0 shadow-none" onSubmit={onSubmit}>
-          <label className="flex flex-col gap-2">
-            <span className="text-xs text-muted-foreground">Email</span>
+        <form
+          className="form--plain mt-5 flex flex-col gap-4"
+          onSubmit={onSubmit}
+        >
+          <label className="flex flex-col gap-1">
+            <span>Email</span>
             <input
-              className="px-3 py-2 text-sm"
               type="email"
               autoComplete="email"
-              placeholder="correo@ejemplo.com"
+              placeholder={`tu.nombre@${EIA_EMAIL_DOMAIN}`}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading}
+              aria-describedby="signup-email-hint"
             />
+            <span id="signup-email-hint" className="text-xs text-muted-foreground">
+              Dominio obligatorio: @{EIA_EMAIL_DOMAIN}
+            </span>
           </label>
-          <label className="flex flex-col gap-2">
-            <span className="text-xs text-muted-foreground">Contraseña</span>
+          <label className="flex flex-col gap-1">
+            <span>Contraseña</span>
             <input
-              className="px-3 py-2 text-sm"
               type="password"
               autoComplete="new-password"
               placeholder="••••••"
@@ -80,10 +106,9 @@ export default function SignUpPage() {
               disabled={loading}
             />
           </label>
-          <label className="flex flex-col gap-2">
-            <span className="text-xs text-muted-foreground">Confirmar contraseña</span>
+          <label className="flex flex-col gap-1">
+            <span>Confirmar contraseña</span>
             <input
-              className="px-3 py-2 text-sm"
               type="password"
               autoComplete="new-password"
               placeholder="••••••"
@@ -94,7 +119,7 @@ export default function SignUpPage() {
             />
           </label>
           {error && (
-            <p className="text-sm text-red-400" role="alert">
+            <p className="text-sm" style={{ color: "var(--danger)" }} role="alert">
               {error}
             </p>
           )}
@@ -103,10 +128,7 @@ export default function SignUpPage() {
           </Button>
           <p className="m-0 text-sm text-muted-foreground">
             ¿Ya tienes cuenta?{" "}
-            <Link
-              className="hover:underline font-semibold"
-              to="/login"
-            >
+            <Link className="font-semibold" to="/login" state={location.state}>
               Iniciar sesión
             </Link>
           </p>

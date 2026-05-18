@@ -40,8 +40,8 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-5xl mx-auto">
-        <p role="status" className="text-muted-foreground">
+      <div className="page">
+        <p className="state-loading" role="status">
           Cargando dashboard…
         </p>
       </div>
@@ -50,42 +50,46 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="p-6 max-w-5xl mx-auto" role="alert">
-        <p className="text-red-400 mb-3">{error}</p>
-        <Link to="/" className="text-brand-700 underline">
-          Volver a espacios
+      <div className="page" role="alert">
+        <div className="alert-error">
+          <p>{error}</p>
+        </div>
+        <Link to="/" className="link-back mt-4 inline-block">
+          ← Volver a espacios
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
-      <p className="text-sm text-muted-foreground mb-6">
-        Resumen rápido de salas y reservas.
-      </p>
+    <div className="page">
+      <header className="page-header">
+        <h1 className="page-title">Dashboard</h1>
+        <p className="page-subtitle">
+          Resumen rápido de salas y reservas.
+        </p>
+      </header>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-        <section className="card">
-          <p className="text-xs text-muted-foreground">Salas</p>
-          <p className="mt-1 text-2xl font-bold">{salas.length}</p>
+      <div className="dashboard-stats">
+        <section className="card stat-card card--static">
+          <p className="stat-label">Salas</p>
+          <p className="stat-value">{salas.length}</p>
         </section>
-        <section className="card">
-          <p className="text-xs text-muted-foreground">Reservas</p>
-          <p className="mt-1 text-2xl font-bold">{reservas.length}</p>
+        <section className="card stat-card card--static">
+          <p className="stat-label">Reservas</p>
+          <p className="stat-value">{reservas.length}</p>
         </section>
-        <section className="card">
-          <p className="text-xs text-muted-foreground">Pendientes</p>
-          <p className="mt-1 text-2xl font-bold">{stats.pendientes}</p>
+        <section className="card stat-card card--static">
+          <p className="stat-label">Pendientes</p>
+          <p className="stat-value">{stats.pendientes}</p>
         </section>
-        <section className="card">
-          <p className="text-xs text-muted-foreground">Aprobadas</p>
-          <p className="mt-1 text-2xl font-bold">{stats.aprobadas}</p>
+        <section className="card stat-card card--static">
+          <p className="stat-label">Aprobadas</p>
+          <p className="stat-value">{stats.aprobadas}</p>
         </section>
       </div>
 
-      <div className="card">
+      <section className="card card--static dashboard-recent">
         <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
           <div>
             <h2 className="text-lg font-semibold">Reservas recientes</h2>
@@ -93,8 +97,8 @@ export default function Dashboard() {
               Últimas 5 reservas guardadas en tu navegador.
             </p>
           </div>
-          <Link to="/reservations" className="text-sm text-brand-700 underline">
-            Ver todas
+          <Link to="/reservations" className="text-sm text-brand-700 font-semibold">
+            Ver todas →
           </Link>
         </div>
 
@@ -104,21 +108,13 @@ export default function Dashboard() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full border border-border rounded-lg overflow-hidden">
+            <table className="data-table">
               <thead>
-                <tr className="bg-surface/60">
-                  <th className="p-2 border-b border-border text-left text-xs text-muted-foreground">
-                    Sala
-                  </th>
-                  <th className="p-2 border-b border-border text-left text-xs text-muted-foreground">
-                    Fecha
-                  </th>
-                  <th className="p-2 border-b border-border text-left text-xs text-muted-foreground">
-                    Franja
-                  </th>
-                  <th className="p-2 border-b border-border text-left text-xs text-muted-foreground">
-                    Estado
-                  </th>
+                <tr>
+                  <th>Sala</th>
+                  <th>Fecha</th>
+                  <th>Franja</th>
+                  <th>Estado</th>
                 </tr>
               </thead>
               <tbody>
@@ -127,18 +123,12 @@ export default function Dashboard() {
                   .sort((a, b) => b.id - a.id)
                   .slice(0, 5)
                   .map((r) => (
-                    <tr key={r.id} className="border-t border-border">
-                      <td className="p-2 text-sm">{r.sala.nombre}</td>
-                      <td className="p-2 text-sm text-muted-foreground">
-                        {r.fecha}
-                      </td>
-                      <td className="p-2 text-sm text-muted-foreground">
-                        {r.timeSlot}
-                      </td>
-                      <td className="p-2 text-sm">
-                        <span className="rounded px-2 py-0.5 text-xs font-semibold bg-surface border border-border">
-                          {r.estado}
-                        </span>
+                    <tr key={r.id}>
+                      <td>{r.sala.nombre}</td>
+                      <td className="text-muted-foreground">{r.fecha}</td>
+                      <td className="text-muted-foreground">{r.timeSlot}</td>
+                      <td>
+                        <span className="badge badge--success">{r.estado}</span>
                       </td>
                     </tr>
                   ))}
@@ -146,7 +136,7 @@ export default function Dashboard() {
             </table>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

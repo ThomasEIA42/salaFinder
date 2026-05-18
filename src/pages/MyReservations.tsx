@@ -13,37 +13,37 @@ export default function MyReservations() {
   const esAdmin = user?.role === "admin";
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="mb-2 text-2xl font-bold">Mis reservaciones</h1>
-      <p className="mb-6 text-sm text-muted-foreground">
-        {esAdmin
-          ? "Como administrador puedes aprobar o rechazar reservas pendientes."
-          : "Aquí ves tus reservas guardadas."}
-      </p>
+    <div className="page max-w-3xl">
+      <header className="page-header">
+        <h1 className="page-title">Mis reservaciones</h1>
+        <p className="page-subtitle">
+          {esAdmin
+            ? "Como administrador puedes aprobar o rechazar reservas pendientes."
+            : "Aquí ves tus reservas guardadas."}
+        </p>
+      </header>
 
       {reservas.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-8 text-center">
+        <div className="empty-state">
           <p className="text-muted-foreground mb-4">
             No tienes reservas todavía.
           </p>
-          <Link to="/" className="text-brand-700 font-semibold underline">
+          <Link to="/" className="btn-link">
             Ver espacios disponibles
           </Link>
         </div>
       ) : (
         <>
-          <ul className="space-y-3">
+          <ul className="space-y-3" style={{ listStyle: "none" }}>
             {reservas.map((r) => (
-              <li
-                key={r.id}
-                className="flex flex-col gap-2 rounded border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
+              <li key={r.id} className="reservation-item">
                 <div>
                   <p className="text-sm font-medium">
                     {r.sala.nombre} — {r.fecha} ({r.timeSlot})
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    Estado: <strong>{r.estado}</strong>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Estado:{" "}
+                    <span className="badge badge--success">{r.estado}</span>
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -51,14 +51,14 @@ export default function MyReservations() {
                     <>
                       <button
                         type="button"
-                        className="bg-emerald-800 text-white text-xs px-3 py-1.5 rounded"
+                        className="btn-approve"
                         onClick={() => setEstadoReserva(r.id, "aprobada")}
                       >
                         Aprobar
                       </button>
                       <button
                         type="button"
-                        className="bg-amber-900 text-white text-xs px-3 py-1.5 rounded"
+                        className="btn-reject"
                         onClick={() => setEstadoReserva(r.id, "rechazada")}
                       >
                         Rechazar
@@ -68,7 +68,7 @@ export default function MyReservations() {
                   <button
                     type="button"
                     onClick={() => cancelarReserva(r.id)}
-                    className="text-xs text-red-400 underline bg-transparent px-0"
+                    className="btn-danger-text"
                   >
                     Cancelar reserva
                   </button>
@@ -79,7 +79,7 @@ export default function MyReservations() {
           <button
             type="button"
             onClick={limpiarReservas}
-            className="mt-4 text-xs text-muted-foreground underline"
+            className="btn-danger-text mt-6"
           >
             Limpiar todas (demo)
           </button>

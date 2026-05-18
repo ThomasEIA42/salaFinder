@@ -1,18 +1,55 @@
 import type { AuditLog, Sala, TipoSala } from "../types/types";
+import { EIA_EMAIL_ERROR, isEmailEia } from "../utils/emailEia";
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 const AUTH_KEY = "salaFinder.auth.user";
+const REGISTRY_KEY = "salaFinder.registered.accounts";
 
-const USERS = [
-  { id: 1, name: "Admin", username: "admin", email: "admin@test.com" },
-  { id: 2, name: "Usuario Demo", username: "demo", email: "demo@test.com" },
-  { id: 3, name: "Thomas Gonzalez", username: "Thom", email: "thomas.gonzalez@gmail.com" },
-  { id: 4, name: "Sebastian ramirez", username: "Sebas07", email: "sebastian.ramirez@gmail.com" },
-  { id: 5, name: "Silvia Suarez", username: "SilviaD", email: "silvia.suarez@gmail.com" },
-];
+const ADMIN_EMAIL = "admin@test.com";
 
-/** id + título + palabra clave para tipo de sala */
+const ADMIN_USER = {
+  id: 1,
+  name: "Admin",
+  username: "admin",
+  email: ADMIN_EMAIL,
+} as const;
+
+type StoredAccount = {
+  id: number;
+  email: string;
+  password: string;
+  name: string;
+  username: string;
+};
+
+export type UserRole = "admin" | "user";
+export type AuthUser = {
+  id: number;
+  name: string;
+  username: string;
+  email: string;
+  role: UserRole;
+};
+
+function isAdminEmail(email: string): boolean {
+  return email.trim().toLowerCase() === ADMIN_EMAIL;
+}
+
+function loadRegistry(): StoredAccount[] {
+  try {
+    const raw = localStorage.getItem(REGISTRY_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as StoredAccount[];
+  } catch {
+    return [];
+  }
+}
+
+function saveRegistry(accounts: StoredAccount[]) {
+  localStorage.setItem(REGISTRY_KEY, JSON.stringify(accounts));
+}
+
 const RAW = [
   { id: 1, t: "Salon A", k: "salon" },
   { id: 2, t: "Salon B", k: "salon" },
@@ -26,24 +63,40 @@ const RAW = [
   { id: 10, t: "Laboratorio fisica de ondas", k: "laboratorio" },
 ] as const;
 
-const E = ["Edificio Ingeniería", "Edificio Medicina", "Biblioteca", "Sala gamer", "Bloque Administrativo"];
-const R = [["Video beam", "Tablero"], ["Computadores", "Video beam"], ["Sillas individuales"], ["Mesas"], ["Tablero"]];
-const P = [["Ingeniería"], ["Administración"], ["Sala gamer"], ["Todos"], ["Ciencias"]];
-const AU = ["admin@sala.com", "coordinacion@sala.com", "docente@sala.com", "estudiante@sala.com"];
-const AA = ["Inició sesión", "Consultó salas", "Creó reserva", "Canceló reserva", "Aprobó reserva"];
+const E = [
+  "Edificio Ingeniería",
+  "Edificio Medicina",
+  "Biblioteca",
+  "Sala gamer",
+  "Bloque Administrativo",
+];
+const R = [
+  ["Video beam", "Tablero"],
+  ["Computadores", "Video beam"],
+  ["Sillas individuales"],
+  ["Mesas"],
+  ["Tablero"],
+];
+const P = [
+  ["Ingeniería"],
+  ["Administración"],
+  ["Sala gamer"],
+  ["Todos"],
+  ["Ciencias"],
+];
 
-function tipo(k: string): TipoSala {
+function tipoSala(k: string): TipoSala {
   if (k === "laboratorio") return "LABORATORIO";
   if (k === "auditorio") return "AUDITORIO";
   return "SALON";
 }
 
-function sala(p: (typeof RAW)[number]): Sala {
+function buildSala(p: (typeof RAW)[number]): Sala {
   const n = p.id;
   return {
     id: n,
     nombre: p.t,
-    tipo: tipo(p.k),
+    tipo: tipoSala(p.k),
     capacidad: 10 + (n % 10) * 5,
     edificio: E[n % E.length],
     recursosPermitidos: [...R[n % R.length]],
@@ -53,37 +106,32 @@ function sala(p: (typeof RAW)[number]): Sala {
   };
 }
 
-function log(p: (typeof RAW)[number]): AuditLog {
-  const n = p.id;
-  const mm = String((n * 7) % 60).padStart(2, "0");
-  return {
-    id: n,
-    usuario: AU[n % AU.length],
-    accion: `${AA[n % AA.length]}: ${p.t}`,
-    fecha: `${(n % 28) + 1}/03/2026 ${(n % 12) + 8}:${mm}`,
-  };
-}
-
-export type UserRole = "admin" | "user";
-export type AuthUser = {
-  id: number;
-  name: string;
-  username: string;
-  email: string;
-  role: UserRole;
-};
-
-function roleFor(email: string, id: number): UserRole {
-  return email.toLowerCase().includes("admin") || id === 1 ? "admin" : "user";
-}
-
 export class FakeApi {
-  async login(email: string, _password: string): Promise<AuthUser> {
+  async login(email: string, password: string): Promise<AuthUser> {
     await delay(400);
-    if (!email?.trim()) throw new Error("Email y contraseña son obligatorios");
-    const u = USERS.find((x) => x.email.toLowerCase() === email.toLowerCase());
-    if (!u) throw new Error("Credenciales inválidas");
-    const auth: AuthUser = { ...u, role: roleFor(u.email, u.id) };
+    const normalized = email?.trim().toLowerCase();
+    if (!normalized || !password?.trim()) {
+      throw new Error("Email y contraseña son obligatorios");
+    }
+
+    if (isAdminEmail(normalized)) {
+      const auth: AuthUser = { ...ADMIN_USER, role: "admin" };
+      localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
+      return auth;
+    }
+
+    const account = loadRegistry().find((a) => a.email === normalized);
+    if (!account || account.password !== password) {
+      throw new Error("Credenciales inválidas");
+    }
+
+    const auth: AuthUser = {
+      id: account.id,
+      name: account.name,
+      username: account.username,
+      email: account.email,
+      role: "user",
+    };
     localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
     return auth;
   }
@@ -92,14 +140,32 @@ export class FakeApi {
     localStorage.removeItem(AUTH_KEY);
   }
 
-  async register(email: string, _password: string): Promise<AuthUser> {
+  async register(email: string, password: string): Promise<AuthUser> {
     await delay(400);
-    if (!email?.trim()) throw new Error("Email obligatorio");
-    const auth: AuthUser = {
+    const normalized = email?.trim().toLowerCase();
+    if (!normalized) throw new Error("Email obligatorio");
+    if (!password?.trim()) throw new Error("Contraseña obligatoria");
+    if (!isEmailEia(normalized)) throw new Error(EIA_EMAIL_ERROR);
+
+    const accounts = loadRegistry();
+    if (accounts.some((a) => a.email === normalized)) {
+      throw new Error("Ya existe una cuenta con ese correo.");
+    }
+
+    const account: StoredAccount = {
       id: Date.now(),
-      name: email.split("@")[0] || "Usuario",
-      username: email.split("@")[0] || "user",
-      email: email.trim(),
+      email: normalized,
+      password,
+      name: normalized.split("@")[0] || "Usuario",
+      username: normalized.split("@")[0] || "user",
+    };
+    saveRegistry([...accounts, account]);
+
+    const auth: AuthUser = {
+      id: account.id,
+      name: account.name,
+      username: account.username,
+      email: account.email,
       role: "user",
     };
     localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
@@ -111,7 +177,7 @@ export class FakeApi {
     if (!raw) return null;
     try {
       const u = JSON.parse(raw) as AuthUser & { role?: UserRole };
-      if (!u.role) u.role = roleFor(u.email ?? "", u.id);
+      if (!u.role) u.role = isAdminEmail(u.email ?? "") ? "admin" : "user";
       return u as AuthUser;
     } catch {
       localStorage.removeItem(AUTH_KEY);
@@ -121,26 +187,24 @@ export class FakeApi {
 
   async obtenerSalas(): Promise<Sala[]> {
     await delay(450);
-    return RAW.map(sala);
+    return RAW.map(buildSala);
   }
 
   async obtenerSalaPorId(id: number): Promise<Sala> {
     await delay(250);
     const p = RAW.find((x) => x.id === id);
     if (!p) throw new Error("Sala no encontrada");
-    return sala(p);
+    return buildSala(p);
   }
 
   async getAuditLogs(): Promise<AuditLog[]> {
     await delay(350);
-    return RAW.map(log);
+    return [];
   }
 
-  async getAuditLogById(id: number): Promise<AuditLog> {
+  async getAuditLogById(_id: number): Promise<AuditLog> {
     await delay(250);
-    const p = RAW.find((x) => x.id === id);
-    if (!p) throw new Error("Audit log no encontrado");
-    return log(p);
+    throw new Error("Audit log no encontrado");
   }
 }
 

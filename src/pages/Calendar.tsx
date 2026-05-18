@@ -15,13 +15,15 @@ export default function Calendar() {
   }, [reservas, fechaSeleccionada]);
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-2">Calendario de reservas</h1>
-      <p className="text-sm text-muted-foreground mb-6">
-        Selecciona una fecha para ver qué reservas hay ese día (demo).
-      </p>
+    <div className="page max-w-4xl">
+      <header className="page-header">
+        <h1 className="page-title">Calendario de reservas</h1>
+        <p className="page-subtitle">
+          Selecciona una fecha para ver qué reservas hay ese día.
+        </p>
+      </header>
 
-      <div className="card">
+      <section className="card card--static">
         <label className="block text-sm font-medium mb-2" htmlFor="cal-fecha">
           Fecha
         </label>
@@ -50,10 +52,7 @@ export default function Calendar() {
         ) : (
           <ul className="mt-3 space-y-2">
             {reservasDelDia.map((r) => (
-              <li
-                key={r.id}
-                className="rounded border border-border bg-surface p-3"
-              >
+              <li key={r.id} className="reservation-item">
                 <p className="text-sm font-medium">
                   {r.sala.nombre} — {r.timeSlot}
                 </p>
@@ -64,7 +63,7 @@ export default function Calendar() {
             ))}
           </ul>
         )}
-      </div>
+      </section>
     </div>
   );
 }

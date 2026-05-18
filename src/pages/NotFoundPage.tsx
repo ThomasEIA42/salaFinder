@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import StateMessage from "../componentes/StateMessage";
 export default function NotFoundPage() {
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
+    <main className="page mx-auto max-w-3xl">
       <StateMessage
         type="empty"
         title="Page not found"

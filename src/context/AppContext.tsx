@@ -69,6 +69,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const crearReserva = useCallback(
     (sala: Reserva["sala"], fecha: string, timeSlot: string) => {
+      if (!user) {
+        showToast("Inicia sesión para crear una reserva.", "error");
+        return;
+      }
       const nueva: Reserva = {
         id: Date.now(),
         sala,
@@ -79,7 +83,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setReservas((prev) => [...prev, nueva]);
       showToast("Reserva creada correctamente.", "success");
     },
-    [showToast]
+    [user, showToast]
   );
 
   const cancelarReserva = useCallback((id: number) => {

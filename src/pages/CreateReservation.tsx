@@ -88,12 +88,14 @@ export default function CreateReservation() {
   }
 
   return (
-    <div className="p-6 max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold mb-2">Nueva reserva</h1>
-      <p className="text-sm text-muted-foreground mb-6">
+    <div className="page max-w-lg">
+      <header className="page-header">
+        <h1 className="page-title">Nueva reserva</h1>
+        <p className="page-subtitle">
         Elige espacio, día y tiempo. Las reservas quedan{" "}
         <strong>pendientes</strong> hasta que un admin las apruebe.
-      </p>
+        </p>
+      </header>
 
       <form onSubmit={enviar} className="flex flex-col gap-4">
         <div>
@@ -148,8 +150,8 @@ export default function CreateReservation() {
         <button type="submit">Crear reserva</button>
       </form>
 
-      <p className="mt-6 text-sm">
-        <Link to="/" className="text-brand-700 underline">
+      <p className="mt-6">
+        <Link to="/" className="link-back">
           ← Volver a espacios
         </Link>
       </p>

@@ -2,30 +2,45 @@ import { FiLoader, FiAlertTriangle, FiInbox } from "react-icons/fi";
 import Button from "./Button";
 
 type Props = {
-  title: string,
-  type: "empty" | "loading" | "error",
-  description?: string,
-  actionText?: string,
-  onAction?: () => void
-}
-export default function StateMessage({ title, type, description, actionText, onAction }: Props) {
-  const Icon = type === "loading" ? FiLoader : type === "error" ? FiAlertTriangle : FiInbox
-  const ring =
+  title: string;
+  type: "empty" | "loading" | "error";
+  description?: string;
+  actionText?: string;
+  onAction?: () => void;
+};
+
+export default function StateMessage({
+  title,
+  type,
+  description,
+  actionText,
+  onAction,
+}: Props) {
+  const Icon =
+    type === "loading"
+      ? FiLoader
+      : type === "error"
+        ? FiAlertTriangle
+        : FiInbox;
+
+  const iconClass =
     type === "error"
-      ? "border-red-200 bg-red-50 text-danger-600"
+      ? "state-message__icon state-message__icon--error"
       : type === "loading"
-        ? "border-brand-200 bg-brand-50 text-brand-700"
-        : "border-border bg-white text-muted";
+        ? "state-message__icon state-message__icon--loading"
+        : "state-message__icon state-message__icon--empty";
 
   return (
-    <div className="rounded-card border border-dashed border-border bg-surface p-6 text-center shadow-card">
-      <div className={`mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border ${ring}`}>
-        <Icon className={type === "loading" ? "animate-spin" : ""} />
+    <div className="state-message">
+      <div className={iconClass}>
+        <Icon className={type === "loading" ? "spin" : ""} />
       </div>
 
-      <h2 className="m-0 text-base font-semibold text-text">{title}</h2>
+      <h2 className="state-message__title">{title}</h2>
 
-      {description && <p className="mt-2 text-sm text-muted">{description}</p>}
+      {description && (
+        <p className="state-message__desc">{description}</p>
+      )}
 
       {actionText && onAction && (
         <div className="mt-4 flex justify-center">

@@ -36,24 +36,30 @@ export default function AuditPage() {
 
   if (!user) {
     return (
-      <div className="p-6 max-w-2xl mx-auto">
-        <p className="text-muted-foreground">Inicia sesión para continuar.</p>
-        <Link to="/login" className="text-brand-700 underline">
-          Log in
-        </Link>
+      <div className="page max-w-2xl">
+        <div className="empty-state">
+          <p className="text-muted-foreground mb-4">
+            Inicia sesión para continuar.
+          </p>
+          <Link to="/login" className="btn-link">
+            Iniciar sesión
+          </Link>
+        </div>
       </div>
     );
   }
 
   if (user.role !== "admin") {
     return (
-      <div className="p-6 max-w-2xl mx-auto" role="alert">
-        <h1 className="text-xl font-bold mb-2">Acceso restringido</h1>
-        <p className="text-muted-foreground mb-4">
-          Solo los administradores pueden ver el historial de auditoría.
-        </p>
-        <Link to="/" className="text-brand-700 underline">
-          Volver al inicio
+      <div className="page max-w-2xl" role="alert">
+        <header className="page-header">
+          <h1 className="page-title">Acceso restringido</h1>
+          <p className="page-subtitle">
+            Solo los administradores pueden ver el historial de auditoría.
+          </p>
+        </header>
+        <Link to="/" className="link-back">
+          ← Volver al inicio
         </Link>
       </div>
     );
@@ -61,17 +67,25 @@ export default function AuditPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
-        <p role="status">Cargando historial</p>
+      <div className="page audit-page">
+        <p className="state-loading" role="status">
+          Cargando historial…
+        </p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-6" role="alert">
-        <p className="text-red-400 mb-2">{error}</p>
-        <button type="button" onClick={() => window.location.reload()}>
+      <div className="page audit-page" role="alert">
+        <div className="alert-error">
+          <p>{error}</p>
+        </div>
+        <button
+          type="button"
+          className="mt-4"
+          onClick={() => window.location.reload()}
+        >
           Reintentar
         </button>
       </div>
