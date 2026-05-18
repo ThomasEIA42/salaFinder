@@ -47,12 +47,13 @@ describe("HomePage", () => {
 
   it("abre el modal y bloquea reserva duplicada (misma sala/fecha/hora)", async () => {
     const user = userEvent.setup();
+    const hoy = new Date().toISOString().slice(0, 10);
     const salaA = mkSala(1, "Sala A", "SALON");
     const reservas: Reserva[] = [
       {
         id: 123,
         sala: salaA,
-        fecha: "2026-03-16",
+        fecha: hoy,
         timeSlot: "09:00-11:00",
         estado: "pendiente",
       },
@@ -72,7 +73,7 @@ describe("HomePage", () => {
       screen.getByRole("heading", { name: /crear reserva/i })
     ).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText(/^Día$/i), "2026-03-16");
+    await user.type(screen.getByLabelText(/^Día$/i), hoy);
     await user.selectOptions(
       screen.getByLabelText(/franja horaria|tiempo entre horarios/i),
       "09:00-11:00"

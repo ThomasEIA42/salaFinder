@@ -43,23 +43,23 @@ export default function LoginPage() {
 
   return (
     <main className="mx-auto max-w-md px-6 py-10">
-      <section className="bg-brand-200 shadow rounded-card px-4">
-        <div className="flex items-center text-text text-xl space-between rounded-t-card py-2">
+      <section className="card">
+        <div className="flex items-center gap-2 text-xl">
           <FiLogIn aria-hidden />
-          <h1 className="font-semibold pl-1">Iniciar sesión</h1>
+          <h1 className="font-semibold">Iniciar sesión</h1>
         </div>
 
-        <p className="font-raleway font-bold text-sm text-surface">
-          Sala Finder — prueba con{" "}
+        <p className="mt-2 text-sm text-muted-foreground">
+          Prueba con{" "}
           <code className="text-xs">demo@test.com</code> o{" "}
           <code className="text-xs">admin@test.com</code>
         </p>
 
-        <form className="mt-4 flex flex-col gap-3" onSubmit={onSubmit}>
+        <form className="mt-4 flex flex-col gap-3 bg-transparent p-0 border-0 shadow-none" onSubmit={onSubmit}>
           <label className="flex flex-col gap-2">
-            <span className="text-xs text-muted">Email</span>
+            <span className="text-xs text-muted-foreground">Email</span>
             <input
-              className="rounded-input border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-300"
+              className="px-3 py-2 text-sm"
               type="email"
               autoComplete="email"
               placeholder="correo@ejemplo.com"
@@ -70,9 +70,9 @@ export default function LoginPage() {
             />
           </label>
           <label className="flex flex-col gap-2">
-            <span className="text-xs text-muted">Contraseña</span>
+            <span className="text-xs text-muted-foreground">Contraseña</span>
             <input
-              className="rounded-input border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-300"
+              className="px-3 py-2 text-sm"
               type="password"
               autoComplete="current-password"
               placeholder="••••••"
@@ -83,17 +83,17 @@ export default function LoginPage() {
             />
           </label>
           {error && (
-            <p className="text-sm text-red-600" role="alert">
+            <p className="text-sm text-red-400" role="alert">
               {error}
             </p>
           )}
           <Button type="submit" variant="primary" disabled={loading}>
             {loading ? "Entrando…" : "Entrar"}
           </Button>
-          <p className="m-0 text-sm text-muted">
+          <p className="m-0 text-sm text-muted-foreground">
             ¿No tienes cuenta?{" "}
             <Link
-              className="text-brand-700 hover:underline hover:font-semibold"
+              className="hover:underline font-semibold"
               to="/signup"
             >
               Registrarse
