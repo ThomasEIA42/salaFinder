@@ -1,6 +1,6 @@
 import type { TipoSala } from "../types/types";
 
-/** Etiqueta en español para mostrar en UI (coherente con el nombre del espacio). */
+//da una etiqueta mas formal para cada tipo de sala
 export function etiquetaTipoSala(tipo: TipoSala): string {
   switch (tipo) {
     case "SALON":

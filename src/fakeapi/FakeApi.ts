@@ -1,17 +1,70 @@
-import type { AuditLog, EstadoSala, Sala, TipoSala } from "../types/types";
-import {
-  AUDIT_ACCIONES,
-  AUDIT_USUARIOS,
-  delay,
-  EDIFICIOS,
-  MOCK_POSTS,
-  MOCK_USERS,
-  PROGRAMAS,
-  RECURSOS,
-} from "./data";
+import type { AuditLog, Sala, TipoSala } from "../types/types";
+
+const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+const AUTH_KEY = "salaFinder.auth.user";
+
+const USERS = [
+  { id: 1, name: "Admin", username: "admin", email: "admin@test.com" },
+  { id: 2, name: "Usuario Demo", username: "demo", email: "demo@test.com" },
+  { id: 3, name: "Thomas Gonzalez", username: "Thom", email: "thomas.gonzalez@gmail.com" },
+  { id: 4, name: "Sebastian ramirez", username: "Sebas07", email: "sebastian.ramirez@gmail.com" },
+  { id: 5, name: "Silvia Suarez", username: "SilviaD", email: "silvia.suarez@gmail.com" },
+];
+
+/** id + título + palabra clave para tipo de sala */
+const RAW = [
+  { id: 1, t: "Salon A", k: "salon" },
+  { id: 2, t: "Salon B", k: "salon" },
+  { id: 3, t: "Auditorio Principal", k: "auditorio" },
+  { id: 4, t: "Laboratorio fisica mecanica", k: "laboratorio" },
+  { id: 5, t: "Salon 1.1B", k: "salon" },
+  { id: 6, t: "Salon 2.4A", k: "salon" },
+  { id: 7, t: "Laboratorio Sistemas", k: "laboratorio" },
+  { id: 8, t: "Auditorio pequeño", k: "auditorio" },
+  { id: 9, t: "Clase 1.4A", k: "salon" },
+  { id: 10, t: "Laboratorio fisica de ondas", k: "laboratorio" },
+] as const;
+
+const E = ["Edificio Ingeniería", "Edificio Medicina", "Biblioteca", "Sala gamer", "Bloque Administrativo"];
+const R = [["Video beam", "Tablero"], ["Computadores", "Video beam"], ["Sillas individuales"], ["Mesas"], ["Tablero"]];
+const P = [["Ingeniería"], ["Administración"], ["Sala gamer"], ["Todos"], ["Ciencias"]];
+const AU = ["admin@sala.com", "coordinacion@sala.com", "docente@sala.com", "estudiante@sala.com"];
+const AA = ["Inició sesión", "Consultó salas", "Creó reserva", "Canceló reserva", "Aprobó reserva"];
+
+function tipo(k: string): TipoSala {
+  if (k === "laboratorio") return "LABORATORIO";
+  if (k === "auditorio") return "AUDITORIO";
+  return "SALON";
+}
+
+function sala(p: (typeof RAW)[number]): Sala {
+  const n = p.id;
+  return {
+    id: n,
+    nombre: p.t,
+    tipo: tipo(p.k),
+    capacidad: 10 + (n % 10) * 5,
+    edificio: E[n % E.length],
+    recursosPermitidos: [...R[n % R.length]],
+    programasPermitidos: [...P[n % P.length]],
+    requiereAprobacion: n % 2 === 0,
+    estado: n % 6 === 0 ? "MANTENIMIENTO" : "DISPONIBLE",
+  };
+}
+
+function log(p: (typeof RAW)[number]): AuditLog {
+  const n = p.id;
+  const mm = String((n * 7) % 60).padStart(2, "0");
+  return {
+    id: n,
+    usuario: AU[n % AU.length],
+    accion: `${AA[n % AA.length]}: ${p.t}`,
+    fecha: `${(n % 28) + 1}/03/2026 ${(n % 12) + 8}:${mm}`,
+  };
+}
 
 export type UserRole = "admin" | "user";
-
 export type AuthUser = {
   id: number;
   name: string;
@@ -19,176 +72,76 @@ export type AuthUser = {
   email: string;
   role: UserRole;
 };
-//simula un error sirve para probar el UI ante las fallas 
-export const SIMULATE_SALAS_ERROR_KEY = "salaFinder_simulate_salas_error";
 
-const STORAGE_KEY = "salaFinder.auth.user";
-
-function fakeDateFromId(id: number): string {
-  const day = (id % 28) + 1;
-  const hour = (id % 12) + 8;
-  const minute = (id * 7) % 60;
-  const mm = String(minute).padStart(2, "0");
-  return `${day}/03/2026 ${hour}:${mm}`;
+function roleFor(email: string, id: number): UserRole {
+  return email.toLowerCase().includes("admin") || id === 1 ? "admin" : "user";
 }
 
-function tipoDesdeCuerpo(body: string): TipoSala {
-  const b = body.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
-  if (b.includes("laboratorio")) return "LABORATORIO";
-  if (b.includes("auditorio")) return "AUDITORIO";
-  return "SALON";
-}
-
-function mapPostASala(post: (typeof MOCK_POSTS)[0]): Sala {
-  const tipo = tipoDesdeCuerpo(post.body);
-  const edificio = EDIFICIOS[post.id % EDIFICIOS.length];
-  const recursos = RECURSOS[post.id % RECURSOS.length];
-  const programasPermitidos = PROGRAMAS[post.id % PROGRAMAS.length];
-  const capacidad = 10 + (post.id % 10) * 5;
-  const estado: EstadoSala =
-    post.id % 6 === 0 ? "MANTENIMIENTO" : "DISPONIBLE";
-
-  return {
-    id: post.id,
-    nombre: post.title,
-    tipo,
-    capacidad,
-    edificio,
-    recursosPermitidos: recursos,
-    programasPermitidos,
-    requiereAprobacion: post.id % 2 === 0,
-    estado,
-  };
-}
-
-function mapPostToAuditLog(post: (typeof MOCK_POSTS)[0]): AuditLog {
-  const usuario = AUDIT_USUARIOS[post.id % AUDIT_USUARIOS.length];
-  const accion = AUDIT_ACCIONES[post.id % AUDIT_ACCIONES.length];
-
-  return {
-    id: post.id,
-    usuario,
-    accion: `${accion}: ${post.title}`,
-    fecha: fakeDateFromId(post.id),
-  };
-}
-
-/**
- * Fake API centralizada en **una sola clase**.
- * Todo se resuelve en memoria (sin backend ni llamadas a red).
- */
 export class FakeApi {
-  // Login “fake”: valida por email contra usuarios mock y guarda sesión en localStorage.
   async login(email: string, _password: string): Promise<AuthUser> {
     await delay(400);
-
-    if (!email?.trim()) {
-      throw new Error("Email y contraseña son obligatorios");
-    }
-
-    const user = MOCK_USERS.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase()
-    );
-
-    if (!user) {
-      throw new Error("Credenciales inválidas");
-    }
-
-    const role: UserRole =
-      user.email.toLowerCase().includes("admin") || user.id === 1
-        ? "admin"
-        : "user";
-    const authUser: AuthUser = {
-      id: user.id,
-      name: user.name,
-      username: user.username,
-      email: user.email,
-      role,
-    };
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser));
-    return authUser;
+    if (!email?.trim()) throw new Error("Email y contraseña son obligatorios");
+    const u = USERS.find((x) => x.email.toLowerCase() === email.toLowerCase());
+    if (!u) throw new Error("Credenciales inválidas");
+    const auth: AuthUser = { ...u, role: roleFor(u.email, u.id) };
+    localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
+    return auth;
   }
 
-  // Cierra sesión borrando el usuario guardado.
   logout(): void {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(AUTH_KEY);
   }
 
-  /** Registro fake: crea sesión local sin validar duplicados */
   async register(email: string, _password: string): Promise<AuthUser> {
     await delay(400);
     if (!email?.trim()) throw new Error("Email obligatorio");
-    const authUser: AuthUser = {
+    const auth: AuthUser = {
       id: Date.now(),
       name: email.split("@")[0] || "Usuario",
       username: email.split("@")[0] || "user",
       email: email.trim(),
       role: "user",
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser));
-    return authUser;
+    localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
+    return auth;
   }
 
-  // Devuelve el usuario actual si existe sesión (localStorage), si no retorna null.
   getCurrentUser(): AuthUser | null {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(AUTH_KEY);
     if (!raw) return null;
-
     try {
       const u = JSON.parse(raw) as AuthUser & { role?: UserRole };
-      if (!u.role) {
-        u.role =
-          u.email?.toLowerCase().includes("admin") || u.id === 1
-            ? "admin"
-            : "user";
-      }
+      if (!u.role) u.role = roleFor(u.email ?? "", u.id);
       return u as AuthUser;
     } catch {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(AUTH_KEY);
       return null;
     }
   }
 
-  // Lista de salas mock si un backend real
   async obtenerSalas(): Promise<Sala[]> {
     await delay(450);
-    if (
-      typeof sessionStorage !== "undefined" &&
-      sessionStorage.getItem(SIMULATE_SALAS_ERROR_KEY) === "1"
-    ) {
-      sessionStorage.removeItem(SIMULATE_SALAS_ERROR_KEY);
-      throw new Error(
-        "No se pudieron cargar los espacios."
-      );
-    }
-    return MOCK_POSTS.slice(0, 20).map(mapPostASala);
+    return RAW.map(sala);
   }
 
-  // Obtiene una sala por id, simulando el comportamiento
   async obtenerSalaPorId(id: number): Promise<Sala> {
     await delay(250);
-
-    const post = MOCK_POSTS.find((p) => p.id === id);
-    if (!post) throw new Error("Sala no encontrada");
-    return mapPostASala(post);
+    const p = RAW.find((x) => x.id === id);
+    if (!p) throw new Error("Sala no encontrada");
+    return sala(p);
   }
 
-  // Devuelve el historial audit log del sistema.
   async getAuditLogs(): Promise<AuditLog[]> {
     await delay(350);
-    return MOCK_POSTS.slice(0, 20).map(mapPostToAuditLog);
+    return RAW.map(log);
   }
 
-  // Devuelve un registro de audit log por id.
   async getAuditLogById(id: number): Promise<AuditLog> {
     await delay(250);
-
-    const post = MOCK_POSTS.find((p) => p.id === id);
-    if (!post) throw new Error("Audit log no encontrado");
-    return mapPostToAuditLog(post);
+    const p = RAW.find((x) => x.id === id);
+    if (!p) throw new Error("Audit log no encontrado");
+    return log(p);
   }
 }
 
 export const fakeApi = new FakeApi();
-

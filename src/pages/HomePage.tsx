@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import type { Sala } from "../types/types";
 import { useApp } from "../context/AppContext";
 import { fakeApi } from "../fakeapi/FakeApi";
@@ -9,6 +8,11 @@ export default function HomePage() {
   const { reservas, crearReserva, showToast } = useApp();
   const hoy = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
+import { fakeApi } from "../fakeapi/FakeApi";
+import SalaCard from "../componentes/SalaCard";
+import SpacesFilters from "../componentes/SpacesFilters";
+
+export default function HomePage() {
   const [salas, setSalas] = useState<Sala[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,12 +20,6 @@ export default function HomePage() {
   const [search, setSearch] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState<string>("");
   const [soloDisponibles, setSoloDisponibles] = useState(false);
-
-  const [salaSeleccionada, setSalaSeleccionada] = useState<Sala | null>(null);
-  const [fechaReserva, setFechaReserva] = useState("");
-  const [franjaHoraria, setFranjaHoraria] = useState("");
-  const [asistentes, setAsistentes] = useState(1);
-  const [errorReserva, setErrorReserva] = useState<string | null>(null);
 
   const cargarSalas = useCallback(async () => {
     setLoading(true);
@@ -96,6 +94,11 @@ export default function HomePage() {
     crearReserva(salaSeleccionada, fechaReserva, franjaHoraria);
     cerrarModal();
   }
+  const reset = useCallback(() => {
+    setSearch("");
+    setTipoFiltro("");
+    setSoloDisponibles(false);
+  }, []);
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -164,6 +167,16 @@ export default function HomePage() {
           Resultados: {filtradas.length}
         </p>
       </div>
+      <SpacesFilters
+        search={search}
+        setSearch={setSearch}
+        tipoFiltro={tipoFiltro}
+        setTipoFiltro={setTipoFiltro}
+        soloDisponibles={soloDisponibles}
+        setSoloDisponibles={setSoloDisponibles}
+        resultados={filtradas.length}
+        onReset={reset}
+      />
 
       {loading && (
         <p className="py-8 text-center text-muted-foreground" role="status">
@@ -186,47 +199,7 @@ export default function HomePage() {
       {!loading && !error && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filtradas.map((sala) => (
-            <article key={sala.id} className="card relative">
-              <div className="absolute right-3 top-3">
-                <span
-                  className={`rounded px-2 py-0.5 text-xs font-semibold ${
-                    sala.estado === "DISPONIBLE"
-                      ? "bg-emerald-900/60 text-emerald-200"
-                      : "bg-amber-900/60 text-amber-200"
-                  }`}
-                >
-                  {sala.estado === "DISPONIBLE" ? "DISPONIBLE" : "MANTENIMIENTO"}
-                </span>
-              </div>
-              <h3 className="text-lg font-semibold pr-24">{sala.nombre}</h3>
-              <p className="text-xs text-muted-foreground mb-1">
-                {etiquetaTipoSala(sala.tipo)}
-              </p>
-              <p className="text-sm text-muted-foreground mb-1">
-                Capacidad: {sala.capacidad} personas
-              </p>
-              <p className="text-xs text-muted-foreground mb-3">
-                {sala.edificio}
-              </p>
-
-              <div className="flex justify-between items-center mt-2">
-                <Link
-                  to={`/sala/${sala.id}`}
-                  className="text-xs font-semibold text-brand-700 hover:underline"
-                >
-                  Ver detalle
-                </Link>
-                {sala.estado === "DISPONIBLE" ? (
-                  <button type="button" onClick={() => abrirModal(sala)}>
-                    Reservar
-                  </button>
-                ) : (
-                  <button type="button" disabled className="opacity-50 cursor-not-allowed">
-                    No disponible
-                  </button>
-                )}
-              </div>
-            </article>
+            <SalaCard key={sala.id} sala={sala} />
           ))}
         </div>
       )}

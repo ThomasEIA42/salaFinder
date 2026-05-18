@@ -9,6 +9,8 @@ export default function Navbar() {
 
   const linkBase = "text-sm text-muted-foreground";
   const active = "text-sm font-semibold";
+  const linkBase = "navLink";
+  const active = "navLinkActive";
 
   function handleLogout() {
     fakeApi.logout();
@@ -31,6 +33,7 @@ export default function Navbar() {
 
         <nav
           className="sf-nav"
+          className="top-nav flex flex-wrap items-center gap-4 text-sm text-muted"
           aria-label="Navegación principal"
         >
           <NavLink
@@ -57,6 +60,22 @@ export default function Navbar() {
           >
             Nueva reserva
           </NavLink>
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) =>
+              isActive ? `${linkBase} ${active}` : linkBase
+            }
+          >
+            Dashboard
+          </NavLink>
+          <NavLink
+            to="/calendar"
+            className={({ isActive }) =>
+              isActive ? `${linkBase} ${active}` : linkBase
+            }
+          >
+            Calendario
+          </NavLink>
 
           {user?.role === "admin" && (
             <NavLink
@@ -74,6 +93,7 @@ export default function Navbar() {
               type="button"
               onClick={handleLogout}
               className="inline-flex items-center gap-2 bg-transparent"
+              className="navButton navButton--ghost"
             >
               <BiLogOut aria-hidden />
               Salir
@@ -85,6 +105,7 @@ export default function Navbar() {
                 className={({ isActive }) =>
                   isActive ? `${active}` : linkBase
                 }
+                className="navButton navButton--ghost"
               >
                 <span className="inline-flex items-center gap-2">
                   <BiLogIn aria-hidden />
@@ -96,6 +117,7 @@ export default function Navbar() {
                 className={({ isActive }) =>
                   isActive ? `${active}` : linkBase
                 }
+                className="navButton navButton--primary"
               >
                 Sign up
               </NavLink>

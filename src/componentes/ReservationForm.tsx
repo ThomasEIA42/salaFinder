@@ -26,9 +26,9 @@ export default function ReservationForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Aquí iría la lógica para detectar conflictos antes de enviar [cite: 7, 24]
+    // Aquí iría la lógica para detectar conflictos de reserva y enviar los datos a la fake api]
     console.log("Datos de reserva enviados:", formData);
-    // [cite: 21, 22]
+    
     alert("Reserva enviada. Estado: Pendiente de aprobación.");
   };
 
@@ -47,9 +47,9 @@ export default function ReservationForm() {
             onChange={handleChange}
           >
             <option value="">Selecciona un salón/cancha</option>
-            <option value="1">Laboratorio de Cómputo A</option>
+            <option value="1">Laboratorio de sistemas A</option>
             <option value="2">Cancha de Fútbol</option>
-            <option value="3">Sala de Juntas 201</option>
+            <option value="3">Sala de Reuniones</option>
           </select>
         </div>
 

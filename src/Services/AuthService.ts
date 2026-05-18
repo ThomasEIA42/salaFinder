@@ -38,7 +38,7 @@ export async function login(email: string, password: string): Promise<AuthUser> 
   const users = (await res.json()) as JsonPlaceholderUser[];
   const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
 
-  // JsonPlaceholder no maneja password; aceptamos si el email existe.
+  // JsonPlaceholder no maneja password, aceptamos si el email existe.
   if (!user) {
     throw new Error("Credenciales inválidas");
   }

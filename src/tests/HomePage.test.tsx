@@ -1,12 +1,11 @@
 import type { ReactNode } from "react";
-import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
+import { describe, expect, test, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import HomePage from "../pages/HomePage";
 import { AppProvider } from "../context/AppContext";
 import { fakeApi } from "../fakeapi/FakeApi";
-import type { Reserva, Sala } from "../types/types";
+import type { Sala } from "../types/types";
 import "@testing-library/jest-dom";
 
 const RESERVAS_KEY = "salaFinder.reservas";
@@ -33,6 +32,10 @@ function wrap(ui: ReactNode) {
   );
 }
 
+/**
+ * Test de integración de UI: monta HomePage con router y contexto real.
+ * Simula la API de salas con un mock para tener datos predecibles (una sola sala “Sala A”).
+ */
 describe("HomePage", () => {
   beforeEach(() => {
     localStorage.removeItem(RESERVAS_KEY);
@@ -60,6 +63,11 @@ describe("HomePage", () => {
     ];
     localStorage.setItem(RESERVAS_KEY, JSON.stringify(reservas));
 
+  /**
+   * HomePage ahora está simplificada (solo listado + filtros).
+   * La acción "Reservar" envía al formulario de nueva reserva con la sala preseleccionada por query param.
+   */
+  test("el link Reservar lleva a /reservar?salaId=<id>", async () => {
     render(wrap(<HomePage />));
 
     await waitFor(() => {
@@ -84,5 +92,7 @@ describe("HomePage", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       /ya existe una reserva/i
     );
+    const reservarLink = screen.getByRole("link", { name: /^Reservar$/i });
+    expect(reservarLink).toHaveAttribute("href", "/reservar?salaId=1");
   });
 });

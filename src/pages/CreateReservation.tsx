@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import type { Sala } from "../types/types";
 import { fakeApi } from "../fakeapi/FakeApi";
 import { useApp } from "../context/AppContext";
@@ -7,6 +7,7 @@ import { useApp } from "../context/AppContext";
 export default function CreateReservation() {
   const { reservas, crearReserva, showToast } = useApp();
   const hoy = new Date().toISOString().slice(0, 10);
+  const [searchParams] = useSearchParams();
   const [salas, setSalas] = useState<Sala[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,8 +21,14 @@ export default function CreateReservation() {
     try {
       const data = await fakeApi.obtenerSalas();
       setSalas(data);
+      const requestedRaw = searchParams.get("salaId");
+      const requestedId = requestedRaw ? Number(requestedRaw) : NaN;
+      const requestedSala = Number.isFinite(requestedId)
+        ? data.find((s) => s.id === requestedId)
+        : undefined;
       setSalaId((prev) => {
         if (prev !== "") return prev;
+        if (requestedSala) return requestedSala.id;
         if (!data.length) return "";
         const firstDisp = data.find((s) => s.estado === "DISPONIBLE");
         return (firstDisp ?? data[0]).id;
@@ -33,7 +40,7 @@ export default function CreateReservation() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     void cargar();
@@ -53,7 +60,7 @@ export default function CreateReservation() {
     );
     if (conflicto) {
       showToast(
-        "Ya existe una reserva para esa sala, fecha y franja.",
+        "Ya existe una reserva para esa sala, fecha y tiempo de horario.",
         "error"
       );
       return;
@@ -64,7 +71,7 @@ export default function CreateReservation() {
   if (loading) {
     return (
       <div className="p-6 max-w-lg mx-auto">
-        <p role="status">Cargando espacios…</p>
+        <p role="status">Cargando espacios</p>
       </div>
     );
   }
@@ -85,7 +92,7 @@ export default function CreateReservation() {
       <h1 className="text-2xl font-bold mb-2">Nueva reserva</h1>
       <p className="text-sm text-muted-foreground mb-6">
         Elige espacio, día y tiempo. Las reservas quedan{" "}
-        <strong>pendientes</strong> hasta que un admin las apruebe (demo).
+        <strong>pendientes</strong> hasta que un admin las apruebe.
       </p>
 
       <form onSubmit={enviar} className="flex flex-col gap-4">
