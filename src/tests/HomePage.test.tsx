@@ -48,6 +48,21 @@ describe("HomePage", () => {
     vi.restoreAllMocks();
   });
 
+  it("abre el modal y bloquea reserva duplicada (misma sala/fecha/hora)", async () => {
+    const user = userEvent.setup();
+    const hoy = new Date().toISOString().slice(0, 10);
+    const salaA = mkSala(1, "Sala A", "SALON");
+    const reservas: Reserva[] = [
+      {
+        id: 123,
+        sala: salaA,
+        fecha: hoy,
+        timeSlot: "09:00-11:00",
+        estado: "pendiente",
+      },
+    ];
+    localStorage.setItem(RESERVAS_KEY, JSON.stringify(reservas));
+
   /**
    * HomePage ahora está simplificada (solo listado + filtros).
    * La acción "Reservar" envía al formulario de nueva reserva con la sala preseleccionada por query param.
@@ -59,6 +74,24 @@ describe("HomePage", () => {
       expect(screen.getByRole("heading", { name: /Sala A/i })).toBeInTheDocument();
     });
 
+    const reservarBtns = screen.getAllByRole("button", { name: /^Reservar$/i });
+    await user.click(reservarBtns[0]);
+
+    expect(
+      screen.getByRole("heading", { name: /crear reserva/i })
+    ).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/^Día$/i), hoy);
+    await user.selectOptions(
+      screen.getByLabelText(/franja horaria|tiempo entre horarios/i),
+      "09:00-11:00"
+    );
+
+    await user.click(screen.getByRole("button", { name: /crear reserva/i }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /ya existe una reserva/i
+    );
     const reservarLink = screen.getByRole("link", { name: /^Reservar$/i });
     expect(reservarLink).toHaveAttribute("href", "/reservar?salaId=1");
   });

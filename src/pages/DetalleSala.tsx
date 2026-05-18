@@ -8,6 +8,7 @@ import { etiquetaTipoSala } from "../utils/tipoSala";
 export default function DetalleSala() {
   const { id } = useParams();
   const { crearReserva, reservas, showToast } = useApp();
+  const hoy = new Date().toISOString().slice(0, 10);
   const [sala, setSala] = useState<Sala | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -137,6 +138,7 @@ export default function DetalleSala() {
                   type="date"
                   value={fecha}
                   onChange={(e) => setFecha(e.target.value)}
+                  min={hoy}
                   required
                 />
               </div>

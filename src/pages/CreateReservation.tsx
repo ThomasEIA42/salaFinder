@@ -6,6 +6,7 @@ import { useApp } from "../context/AppContext";
 
 export default function CreateReservation() {
   const { reservas, crearReserva, showToast } = useApp();
+  const hoy = new Date().toISOString().slice(0, 10);
   const [searchParams] = useSearchParams();
   const [salas, setSalas] = useState<Sala[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,6 +125,7 @@ export default function CreateReservation() {
             type="date"
             value={fecha}
             onChange={(e) => setFecha(e.target.value)}
+            min={hoy}
             required
           />
         </div>

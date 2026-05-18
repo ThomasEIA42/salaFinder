@@ -7,6 +7,8 @@ export default function Navbar() {
   const { user, setUser } = useApp();
   const navigate = useNavigate();
 
+  const linkBase = "text-sm text-muted-foreground";
+  const active = "text-sm font-semibold";
   const linkBase = "navLink";
   const active = "navLinkActive";
 
@@ -17,21 +19,27 @@ export default function Navbar() {
   }
 
   return (
-    <header className="border-b border-border bg-surface">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-4">
-        <div className="flex items-center gap-2 text-text">
-          <BiBomb className="text-brand-700" aria-hidden />
+    <header className="sf-header">
+      <div className="sf-header-inner">
+        <div className="flex items-center gap-2">
+          <BiBomb aria-hidden />
           <h2 className="text-lg font-semibold">Sala Finder</h2>
+          {user ? (
+            <span className="text-xs text-muted-foreground">
+              {user.role === "admin" ? "Admin" : "Usuario"} · {user.email}
+            </span>
+          ) : null}
         </div>
 
         <nav
+          className="sf-nav"
           className="top-nav flex flex-wrap items-center gap-4 text-sm text-muted"
           aria-label="Navegación principal"
         >
           <NavLink
             to="/"
             className={({ isActive }) =>
-              isActive ? `${linkBase} ${active}` : linkBase
+              isActive ? `${active}` : linkBase
             }
           >
             Espacios
@@ -39,7 +47,7 @@ export default function Navbar() {
           <NavLink
             to="/reservations"
             className={({ isActive }) =>
-              isActive ? `${linkBase} ${active}` : linkBase
+              isActive ? `${active}` : linkBase
             }
           >
             Mis reservaciones
@@ -47,7 +55,7 @@ export default function Navbar() {
           <NavLink
             to="/reservar"
             className={({ isActive }) =>
-              isActive ? `${linkBase} ${active}` : linkBase
+              isActive ? `${active}` : linkBase
             }
           >
             Nueva reserva
@@ -73,7 +81,7 @@ export default function Navbar() {
             <NavLink
               to="/audit"
               className={({ isActive }) =>
-                isActive ? `${linkBase} ${active}` : linkBase
+                isActive ? `${active}` : linkBase
               }
             >
               Auditoría
@@ -84,6 +92,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={handleLogout}
+              className="inline-flex items-center gap-2 bg-transparent"
               className="navButton navButton--ghost"
             >
               <BiLogOut aria-hidden />
@@ -93,6 +102,9 @@ export default function Navbar() {
             <>
               <NavLink
                 to="/login"
+                className={({ isActive }) =>
+                  isActive ? `${active}` : linkBase
+                }
                 className="navButton navButton--ghost"
               >
                 <span className="inline-flex items-center gap-2">
@@ -102,6 +114,9 @@ export default function Navbar() {
               </NavLink>
               <NavLink
                 to="/signup"
+                className={({ isActive }) =>
+                  isActive ? `${active}` : linkBase
+                }
                 className="navButton navButton--primary"
               >
                 Sign up
