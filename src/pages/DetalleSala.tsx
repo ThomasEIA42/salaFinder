@@ -1,41 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import {
-  FiAlertTriangle,
-  FiBookOpen,
-  FiCalendar,
-  FiCheckCircle,
-  FiClock,
-  FiCpu,
-  FiLayers,
-  FiMapPin,
-  FiMic,
-  FiShield,
-  FiUsers,
-} from "react-icons/fi";
-import type { Sala, TipoSala } from "../types/types";
-import { fakeApi } from "../fakeapi/FakeApi";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import type { Sala } from "../types/types";
+import { getSpaceById } from "../api/api";
 import { useApp } from "../context/AppContext";
-import { loginRedirectState, reservarReturnTo } from "../utils/authRedirect";
-import { etiquetaTipoSala, heroTipoSala } from "../utils/tipoSala";
-
-function IconoTipo({ tipo }: { tipo: TipoSala }) {
-  const className = "detail-hero-icon";
-  switch (tipo) {
-    case "LABORATORIO":
-      return <FiCpu className={className} aria-hidden />;
-    case "AUDITORIO":
-      return <FiMic className={className} aria-hidden />;
-    default:
-      return <FiBookOpen className={className} aria-hidden />;
-  }
-}
+import { etiquetaTipoSala } from "../utils/tipoSala";
 
 export default function DetalleSala() {
   const { id } = useParams();
-  const { user, crearReserva, reservas, showToast } = useApp();
-  const navigate = useNavigate();
-  const hoy = new Date().toISOString().slice(0, 10);
+  const { crearReserva, reservas, showToast } = useApp();
   const [sala, setSala] = useState<Sala | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,28 +44,8 @@ export default function DetalleSala() {
     };
   }, [id]);
 
-  const reservasSala = useMemo(() => {
-    if (!sala) return [];
-    return reservas
-      .filter((r) => r.sala.id === sala.id)
-      .slice()
-      .sort((a, b) => (a.fecha > b.fecha ? 1 : a.fecha < b.fecha ? -1 : 0));
-  }, [reservas, sala]);
-
-  const proximasReservas = useMemo(
-    () => reservasSala.filter((r) => r.fecha >= hoy).slice(0, 5),
-    [reservasSala, hoy]
-  );
-
-  function irAReservar() {
+  function intentarReservar() {
     if (!sala) return;
-    if (!user) {
-      showToast("Inicia sesión para reservar.", "error");
-      navigate("/login", {
-        state: loginRedirectState(reservarReturnTo(sala.id)),
-      });
-      return;
-    }
     if (sala.estado === "MANTENIMIENTO") {
       showToast("No se puede reservar: sala en mantenimiento.", "error");
       return;
@@ -104,10 +56,6 @@ export default function DetalleSala() {
   }
 
   function confirmar() {
-    if (!user) {
-      showToast("Inicia sesión para reservar.", "error");
-      return;
-    }
     if (!sala || !fecha || !timeSlot) return;
     const conflicto = reservas.some(
       (r) =>
@@ -123,268 +71,79 @@ export default function DetalleSala() {
 
   if (loading) {
     return (
-      <div className="page detail-page">
-        <div className="detail-skeleton">
-          <div className="detail-skeleton-hero" />
-          <div className="detail-skeleton-grid">
-            <div className="detail-skeleton-block" />
-            <div className="detail-skeleton-aside" />
-          </div>
-        </div>
-        <p className="state-loading" role="status">
-          Cargando espacio…
-        </p>
+      <div className="p-6">
+        <p role="status">Cargando sala</p>
       </div>
     );
   }
 
   if (error || !sala) {
     return (
-      <div className="page detail-page" role="alert">
-        <div className="alert-error">
-          <p>{error || "Sala no encontrada."}</p>
-        </div>
-        <Link to="/" className="link-back mt-4 inline-block">
-          ← Volver al listado
+      <div className="p-6" role="alert">
+        <p className="text-red-400 mb-4">{error || "Sala no encontrada."}</p>
+        <Link to="/" className="text-brand-700 underline">
+          Volver al listado
         </Link>
       </div>
     );
   }
 
-  const disponible = sala.estado === "DISPONIBLE";
-
   return (
-    <div className="page detail-page">
-      <Link to="/" className="link-back">
-        ← Espacios
+    <div className="p-6 max-w-xl">
+      <Link to="/" className="text-sm text-brand-700 underline mb-4 inline-block">
+        Espacios
       </Link>
+      <h1 className="text-2xl font-bold mb-4">{sala.nombre}</h1>
+      <ul className="space-y-2 text-sm text-muted-foreground mb-6">
+        <li>Tipo: {etiquetaTipoSala(sala.tipo)}</li>
+        <li>Capacidad: {sala.capacidad}</li>
+        <li>Edificio: {sala.edificio}</li>
+        <li>
+          Estado:{" "}
+          <strong>
+            {sala.estado === "DISPONIBLE" ? "Disponible" : "Mantenimiento"}
+          </strong>
+        </li>
+      </ul>
 
-      <header className={`detail-hero ${heroTipoSala(sala.tipo)}`}>
-        <div className="detail-hero-inner">
-          <div className="detail-hero-icon-wrap">
-            <IconoTipo tipo={sala.tipo} />
-          </div>
-          <div className="detail-hero-text">
-            <div className="detail-hero-meta">
-              <span
-                className={`badge ${
-                  disponible ? "badge--success" : "badge--warning"
-                }`}
-              >
-                {disponible ? "Disponible" : "Mantenimiento"}
-              </span>
-              <span className="detail-hero-tipo">
-                {etiquetaTipoSala(sala.tipo)}
-              </span>
-            </div>
-            <h1 className="detail-hero-title">{sala.nombre}</h1>
-            <p className="detail-hero-edificio">
-              <FiMapPin aria-hidden />
-              {sala.edificio}
-            </p>
-          </div>
-        </div>
-      </header>
-
-      <div className="detail-grid">
-        <div className="detail-main">
-          <section className="detail-stats" aria-label="Datos del espacio">
-            <article className="detail-stat">
-              <FiUsers className="detail-stat-icon" aria-hidden />
-              <div>
-                <p className="detail-stat-label">Capacidad</p>
-                <p className="detail-stat-value">{sala.capacidad}</p>
-                <p className="detail-stat-hint">personas</p>
-              </div>
-            </article>
-            <article className="detail-stat">
-              <FiLayers className="detail-stat-icon" aria-hidden />
-              <div>
-                <p className="detail-stat-label">Tipo</p>
-                <p className="detail-stat-value detail-stat-value--sm">
-                  {etiquetaTipoSala(sala.tipo)}
-                </p>
-              </div>
-            </article>
-            <article className="detail-stat">
-              <FiCalendar className="detail-stat-icon" aria-hidden />
-              <div>
-                <p className="detail-stat-label">Reservas</p>
-                <p className="detail-stat-value">{reservasSala.length}</p>
-                <p className="detail-stat-hint">registradas</p>
-              </div>
-            </article>
-            <article className="detail-stat">
-              <FiShield className="detail-stat-icon" aria-hidden />
-              <div>
-                <p className="detail-stat-label">Aprobación</p>
-                <p className="detail-stat-value detail-stat-value--sm">
-                  {sala.requiereAprobacion ? "Requerida" : "Automática"}
-                </p>
-              </div>
-            </article>
-          </section>
-
-          <section className="card card--static detail-section">
-            <h2 className="detail-section-title">Recursos incluidos</h2>
-            {sala.recursosPermitidos.length > 0 ? (
-              <ul className="detail-tags">
-                {sala.recursosPermitidos.map((r) => (
-                  <li key={r} className="detail-tag">
-                    {r}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="detail-empty-hint">Sin recursos adicionales.</p>
-            )}
-          </section>
-
-          <section className="card card--static detail-section">
-            <h2 className="detail-section-title">Programas permitidos</h2>
-            {sala.programasPermitidos.length > 0 ? (
-              <ul className="detail-tags detail-tags--accent">
-                {sala.programasPermitidos.map((p) => (
-                  <li key={p} className="detail-tag detail-tag--accent">
-                    {p}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="detail-empty-hint">Abierto a todos los programas.</p>
-            )}
-          </section>
-
-          <section className="card card--static detail-section">
-            <div className="detail-section-head">
-              <h2 className="detail-section-title">Próximas reservas</h2>
-              <span className="detail-section-count">
-                {proximasReservas.length} en calendario
-              </span>
-            </div>
-            {proximasReservas.length === 0 ? (
-              <p className="detail-empty-hint">
-                No hay reservas próximas para este espacio. ¡Sé el primero en
-                reservar!
-              </p>
-            ) : (
-              <ul className="detail-reservas-list">
-                {proximasReservas.map((r) => (
-                  <li key={r.id} className="detail-reserva-row">
-                    <div className="detail-reserva-fecha">
-                      <FiCalendar aria-hidden />
-                      <span>{r.fecha}</span>
-                    </div>
-                    <div className="detail-reserva-slot">
-                      <FiClock aria-hidden />
-                      <span>{r.timeSlot}</span>
-                    </div>
-                    <span
-                      className={`badge ${
-                        r.estado === "aprobada"
-                          ? "badge--success"
-                          : r.estado === "pendiente"
-                            ? "badge--warning"
-                            : "badge--warning"
-                      }`}
-                    >
-                      {r.estado}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </div>
-
-        <aside className="detail-aside">
-          <div className="card card--static detail-booking-card">
-            <h2 className="detail-booking-title">Reservar espacio</h2>
-            <p className="detail-booking-desc">
-              {disponible
-                ? "Elige fecha y franja horaria. La reserva quedará pendiente hasta aprobación."
-                : "Este espacio no acepta reservas mientras esté en mantenimiento."}
-            </p>
-
-            {disponible ? (
-              <>
-                <ul className="detail-booking-perks">
-                  <li>
-                    <FiCheckCircle aria-hidden />
-                    Confirmación por correo (demo)
-                  </li>
-                  <li>
-                    <FiCheckCircle aria-hidden />
-                    {sala.requiereAprobacion
-                      ? "Requiere aprobación de admin"
-                      : "Confirmación inmediata"}
-                  </li>
-                </ul>
-                <button
-                  type="button"
-                  className="detail-booking-btn"
-                  onClick={irAReservar}
-                >
-                  {user ? "Reservar ahora" : "Iniciar sesión para reservar"}
-                </button>
-                {user ? (
-                  <Link
-                    to={`/reservar?salaId=${sala.id}`}
-                    className="detail-booking-link"
-                  >
-                    Ir al formulario completo →
-                  </Link>
-                ) : (
-                  <Link
-                    to="/login"
-                    state={loginRedirectState(reservarReturnTo(sala.id))}
-                    className="detail-booking-link"
-                  >
-                    Iniciar sesión →
-                  </Link>
-                )}
-              </>
-            ) : (
-              <div className="detail-maintenance" role="status">
-                <FiAlertTriangle aria-hidden />
-                <p>En mantenimiento. Vuelve más tarde o elige otro espacio.</p>
-                <Link to="/" className="btn-link mt-3 inline-flex">
-                  Ver otros espacios
-                </Link>
-              </div>
-            )}
-          </div>
-        </aside>
-      </div>
+      {sala.estado === "DISPONIBLE" ? (
+        <button type="button" onClick={intentarReservar}>
+          Reservar
+        </button>
+      ) : (
+        <p className="text-amber-400 text-sm">
+          No disponible para reserva (mantenimiento).
+        </p>
+      )}
 
       {modalOpen && (
         <div
-          className="modal-overlay"
+          className="modal-overlay mt-0"
           role="dialog"
           aria-modal="true"
           aria-labelledby="detalle-modal-titulo"
         >
-          <div className="modal-content detail-modal">
-            <h2 id="detalle-modal-titulo" className="detail-modal-title">
+          <div className="modal-content">
+            <h2 id="detalle-modal-titulo" className="text-lg font-bold mb-3">
               Reservar {sala.nombre}
             </h2>
-            <p className="detail-modal-sub">
-              {etiquetaTipoSala(sala.tipo)} · {sala.edificio}
-            </p>
-            <div className="flex flex-col gap-4 mt-4">
+            <div className="flex flex-col gap-3">
               <div>
-                <label htmlFor="det-fecha">Fecha</label>
+                <label htmlFor="det-fecha" className="block text-sm mb-1">
+                  Fecha
+                </label>
                 <input
                   id="det-fecha"
                   type="date"
                   value={fecha}
                   onChange={(e) => setFecha(e.target.value)}
-                  min={hoy}
                   required
                 />
               </div>
               <div>
-                <label htmlFor="det-slot">Franja horaria</label>
+                <label htmlFor="det-slot" className="block text-sm mb-1">
+                  Franja
+                </label>
                 <select
                   id="det-slot"
                   value={timeSlot}
@@ -392,23 +151,20 @@ export default function DetalleSala() {
                   required
                 >
                   <option value="">Selecciona…</option>
-                  <option value="07:00-09:00">07:00–09:00</option>
                   <option value="09:00-11:00">09:00–11:00</option>
-                  <option value="11:00-13:00">11:00–13:00</option>
                   <option value="14:00-16:00">14:00–16:00</option>
-                  <option value="16:00-18:00">16:00–18:00</option>
                 </select>
               </div>
-              <div className="flex gap-2 justify-end pt-2">
+              <div className="flex gap-2 justify-end mt-2">
                 <button
                   type="button"
-                  className="btn-ghost"
+                  className="border border-border bg-transparent px-3 py-2"
                   onClick={() => setModalOpen(false)}
                 >
                   Cancelar
                 </button>
                 <button type="button" onClick={confirmar}>
-                  Confirmar reserva
+                  Confirmar
                 </button>
               </div>
             </div>

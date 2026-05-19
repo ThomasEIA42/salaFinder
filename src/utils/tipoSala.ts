@@ -1,7 +1,5 @@
-import type { TipoSala } from "../types/types";
-
-export function etiquetaTipoSala(tipo: TipoSala): string {
-  switch (tipo) {
+export function etiquetaTipoSala(tipo: string): string {
+  switch (tipo.toUpperCase()) {
     case "SALON":
       return "Salón";
     case "LABORATORIO":
@@ -13,8 +11,8 @@ export function etiquetaTipoSala(tipo: TipoSala): string {
   }
 }
 
-export function heroTipoSala(tipo: TipoSala): string {
-  switch (tipo) {
+export function heroTipoSala(tipo: string): string {
+  switch (tipo.toUpperCase()) {
     case "LABORATORIO":
       return "detail-hero--lab";
     case "AUDITORIO":

@@ -1,54 +1,26 @@
-# salaFinder  
+# SalaFinder (frontend)
 
-<p align="center">  
-  <b>Plataforma web para la gestión y búsqueda de salas</b><br>  
-  Encuentra, visualiza y administra espacios de manera fácil e intuitiva  
-</p>
+Plataforma web para buscar espacios y gestionar reservas, conectada al backend **BackendSalaFinder** (ASP.NET Core).
 
----
-
-## Descripción  
-
-salaFinder es una aplicación web desarrollada con React que permite a los usuarios buscar, visualizar y gestionar salas dentro de una organización.  
-
-El proyecto está enfocado en ofrecer una experiencia clara, rápida y organizada, utilizando una arquitectura moderna basada en componentes y manejo de estado global.  
-
----
-
-## ¿Qué hace este proyecto?  
-
-- Permite consultar salas disponibles  
-- Muestra información detallada de cada sala  
-- Gestiona datos de forma dinámica  
-- Usa componentes reutilizables  
-- Simula datos mediante una API  
-
----
-
-## Tecnologías  
-
-<p align="center">
-
-| Tecnología     | Uso                          |
-|--------------|------------------------------|
-| React        | Construcción de la interfaz  |
-| Context API  | Manejo de estado global      |
-| CSS          | Estilos y diseño             |
-| Fake API     | Simulación de backend        |
-
-</p>
-
----
-
-## Estructura del proyecto  
+## Desarrollo local
 
 ```bash
-src/
-│
-├── assets/        # Recursos (imágenes, íconos)
-├── componentes/   # Componentes reutilizables
-├── context/       # Estado global (Context API)
-├── fakeapi/       # Datos simulados
-├── pages/         # Vistas principales
-├── services/      # Lógica de negocio
-└── data/          # Datos adicionales
+npm install
+npm run dev
+```
+
+Asegúrate de tener el API en `https://localhost:7060` (ver [INTEGRACION.md](../INTEGRACION.md) en la raíz del workspace).
+
+## Scripts
+
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Servidor de desarrollo (proxy `/api` → backend) |
+| `npm run build` | Build de producción |
+| `npm run test` | Tests con Vitest |
+
+## Stack
+
+React 19, TypeScript, Vite, Tailwind CSS, React Router.
+
+La capa HTTP está en `src/api/api.ts` (JWT en `localStorage`).
