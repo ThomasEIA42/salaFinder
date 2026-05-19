@@ -1,89 +1,134 @@
+import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useApp } from "../context/AppContext";
+import {
+  getReservationsByUser,
+  getAllReservations,
+  formatApiDate,
+  formatApiTime,
+  type Reservation,
+} from "../api/api";
 
 export default function MyReservations() {
-  const {
-    reservas,
-    user,
-    cancelarReserva,
-    limpiarReservas,
-    setEstadoReserva,
-  } = useApp();
+  const { user, cancelReservation, approveReservation, rejectReservation, showToast } =
+    useApp();
+  const [reservas, setReservas] = useState<Reservation[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const esAdmin = user?.role === "admin";
+  const esAdmin = user?.role === "Admin";
+
+  const cargar = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const data = esAdmin
+        ? await getAllReservations()
+        : await getReservationsByUser(user.id);
+      setReservas(data);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Error al cargar reservas.", "error");
+    } finally {
+      setLoading(false);
+    }
+  }, [user, esAdmin, showToast]);
+
+  useEffect(() => {
+    void cargar();
+  }, [cargar]);
+
+  async function handleCancel(id: string) {
+    await cancelReservation(id);
+    void cargar();
+  }
+
+  async function handleApprove(id: string) {
+    await approveReservation(id);
+    void cargar();
+  }
+
+  async function handleReject(id: string) {
+    await rejectReservation(id);
+    void cargar();
+  }
+
+  if (loading) {
+    return (
+      <div className="page">
+        <p className="state-loading" role="status">
+          Cargando reservas…
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="mb-2 text-2xl font-bold">Mis reservaciones</h1>
-      <p className="mb-6 text-sm text-muted-foreground">
-        {esAdmin
-          ? "Como administrador puedes aprobar o rechazar reservas pendientes."
-          : "Aquí ves tus reservas guardadas."}
-      </p>
+    <div className="page max-w-3xl">
+      <header className="page-header">
+        <h1 className="page-title">
+          {esAdmin ? "Todas las reservas" : "Mis reservaciones"}
+        </h1>
+        <p className="page-subtitle">
+          {esAdmin
+            ? "Como administrador puedes aprobar o rechazar reservas pendientes."
+            : "Aquí ves tus reservas del backend."}
+        </p>
+      </header>
 
       {reservas.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-8 text-center">
-          <p className="text-muted-foreground mb-4">
-            No tienes reservas todavía.
-          </p>
-          <Link to="/" className="text-brand-700 font-semibold underline">
+        <div className="empty-state">
+          <p className="text-muted-foreground mb-4">No hay reservas.</p>
+          <Link to="/" className="btn-link">
             Ver espacios disponibles
           </Link>
         </div>
       ) : (
-        <>
-          <ul className="space-y-3">
-            {reservas.map((r) => (
-              <li
-                key={r.id}
-                className="flex flex-col gap-2 rounded border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <p className="text-sm font-medium">
-                    {r.sala.nombre} — {r.fecha} ({r.timeSlot})
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Estado: <strong>{r.estado}</strong>
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {esAdmin && r.estado === "pendiente" && (
-                    <>
-                      <button
-                        type="button"
-                        className="bg-emerald-800 text-white text-xs px-3 py-1.5 rounded"
-                        onClick={() => setEstadoReserva(r.id, "aprobada")}
-                      >
-                        Aprobar
-                      </button>
-                      <button
-                        type="button"
-                        className="bg-amber-900 text-white text-xs px-3 py-1.5 rounded"
-                        onClick={() => setEstadoReserva(r.id, "rechazada")}
-                      >
-                        Rechazar
-                      </button>
-                    </>
-                  )}
+        <ul style={{ listStyle: "none" }} className="space-y-3">
+          {reservas.map((r) => (
+            <li key={r.id_reservation} className="reservation-item">
+              <div>
+                <p className="text-sm font-medium">
+                  {r.space?.name ?? r.spaceId} — {formatApiDate(r.date)} (
+                  {formatApiTime(r.startTime)} - {formatApiTime(r.endTime)})
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Propósito: {r.purpose} · Asistentes: {r.attendeeCount}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Estado: <span className="badge badge--warning">{r.status}</span>
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {esAdmin && r.status === "Pending" && (
+                  <>
+                    <button
+                      type="button"
+                      className="btn-approve"
+                      onClick={() => void handleApprove(r.id_reservation)}
+                    >
+                      Aprobar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-reject"
+                      onClick={() => void handleReject(r.id_reservation)}
+                    >
+                      Rechazar
+                    </button>
+                  </>
+                )}
+                {(r.status === "Pending" || r.status === "Approved") && (
                   <button
                     type="button"
-                    onClick={() => cancelarReserva(r.id)}
-                    className="text-xs text-red-400 underline bg-transparent px-0"
+                    onClick={() => void handleCancel(r.id_reservation)}
+                    className="btn-danger-text"
                   >
-                    Cancelar reserva
+                    Cancelar
                   </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <button
-            type="button"
-            onClick={limpiarReservas}
-            className="mt-4 text-xs text-muted-foreground underline"
-          >
-            Limpiar todas (demo)
-          </button>
-        </>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

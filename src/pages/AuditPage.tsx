@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import type { AuditLog } from "../types/types";
+import { getAuditLogs, type AuditLog } from "../api/api";
 import { useApp } from "../context/AppContext";
-import { fakeApi } from "../fakeapi/FakeApi";
-import AuditLogTable from "../Data/AuditLog";
+import { Link } from "react-router-dom";
 
 export default function AuditPage() {
   const { user } = useApp();
@@ -12,71 +10,59 @@ export default function AuditPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user?.role !== "admin") return;
-    let cancelled = false;
+    if (user?.role !== "Admin") return;
     (async () => {
       setLoading(true);
-      setError(null);
       try {
-        const data = await fakeApi.getAuditLogs();
-        if (!cancelled) setLogs(data);
+        const data = await getAuditLogs();
+        setLogs(data);
       } catch (e) {
-        if (!cancelled)
-          setError(
-            e instanceof Error ? e.message : "Error al cargar auditoría."
-          );
+        setError(e instanceof Error ? e.message : "Error al cargar logs.");
       } finally {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.role]);
+  }, [user]);
 
-  if (!user) {
-    return (
-      <div className="p-6 max-w-2xl mx-auto">
-        <p className="text-muted-foreground">Inicia sesión para continuar.</p>
-        <Link to="/login" className="text-brand-700 underline">
-          Log in
-        </Link>
-      </div>
-    );
-  }
-
-  if (user.role !== "admin") {
-    return (
-      <div className="p-6 max-w-2xl mx-auto" role="alert">
-        <h1 className="text-xl font-bold mb-2">Acceso restringido</h1>
-        <p className="text-muted-foreground mb-4">
-          Solo los administradores pueden ver el historial de auditoría.
-        </p>
-        <Link to="/" className="text-brand-700 underline">
-          Volver al inicio
-        </Link>
-      </div>
-    );
-  }
-
-  if (loading) {
+  if (user?.role !== "Admin") {
     return (
       <div className="p-6">
-        <p role="status">Cargando historial</p>
+        <p className="text-red-400">Acceso restringido a administradores.</p>
+        <Link to="/" className="text-brand-700 underline">Volver</Link>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="p-6" role="alert">
-        <p className="text-red-400 mb-2">{error}</p>
-        <button type="button" onClick={() => window.location.reload()}>
-          Reintentar
-        </button>
-      </div>
-    );
-  }
+  if (loading) return <div className="p-6"><p>Cargando logs…</p></div>;
+  if (error) return <div className="p-6"><p className="text-red-400">{error}</p></div>;
 
-  return <AuditLogTable logs={logs} />;
+  return (
+    <div className="p-6 max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6">Audit Log</h1>
+      <div className="overflow-x-auto">
+        <table className="w-full border border-border rounded-lg overflow-hidden">
+          <thead>
+            <tr className="bg-surface/60">
+              <th className="p-2 border-b border-border text-left text-xs text-muted-foreground">Usuario</th>
+              <th className="p-2 border-b border-border text-left text-xs text-muted-foreground">Acción</th>
+              <th className="p-2 border-b border-border text-left text-xs text-muted-foreground">Entidad</th>
+              <th className="p-2 border-b border-border text-left text-xs text-muted-foreground">Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            {logs.map((l) => (
+              <tr key={l.id_log} className="border-t border-border">
+                <td className="p-2 text-xs text-muted-foreground">{l.userId}</td>
+                <td className="p-2 text-sm">{l.action}</td>
+                <td className="p-2 text-xs text-muted-foreground">{l.entity}</td>
+                <td className="p-2 text-xs text-muted-foreground">
+                  {new Date(l.timestamp).toLocaleString("es-CO")}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }

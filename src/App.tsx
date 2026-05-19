@@ -1,7 +1,7 @@
 import Navbar from "./componentes/Navbar";
+import RequireAuth from "./componentes/RequireAuth";
 import Toast from "./componentes/Toast";
 import { Route, Routes } from "react-router-dom";
-import { AppProvider } from "./context/AppContext";
 
 import HomePage from "./pages/HomePage";
 import DetalleSala from "./pages/DetalleSala";
@@ -21,11 +21,32 @@ function AppRoutes() {
       <Toast />
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/reservations" element={<MyReservations />} />
+        <Route
+          path="/reservations"
+          element={
+            <RequireAuth>
+              <MyReservations />
+            </RequireAuth>
+          }
+        />
         <Route path="/sala/:id" element={<DetalleSala />} />
-        <Route path="/reservar" element={<CrearReserva />} />
+        <Route
+          path="/reservar"
+          element={
+            <RequireAuth>
+              <CrearReserva />
+            </RequireAuth>
+          }
+        />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/calendar" element={<Calendar />} />
+        <Route
+          path="/calendar"
+          element={
+            <RequireAuth>
+              <Calendar />
+            </RequireAuth>
+          }
+        />
         <Route path="/audit" element={<AuditPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
@@ -36,9 +57,5 @@ function AppRoutes() {
 }
 
 export default function App() {
-  return (
-    <AppProvider>
-      <AppRoutes />
-    </AppProvider>
-  );
+  return <AppRoutes />;
 }

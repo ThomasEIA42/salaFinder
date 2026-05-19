@@ -1,41 +1,45 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import type { Sala } from "../types/types";
-import { fakeApi } from "../fakeapi/FakeApi";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { getSpaces, createReservation, type Space } from "../api/api";
 import { useApp } from "../context/AppContext";
 
+const TIME_SLOTS = [
+  { label: "07:00–09:00", start: "07:00:00", end: "09:00:00" },
+  { label: "09:00–11:00", start: "09:00:00", end: "11:00:00" },
+  { label: "11:00–13:00", start: "11:00:00", end: "13:00:00" },
+  { label: "14:00–16:00", start: "14:00:00", end: "16:00:00" },
+  { label: "16:00–18:00", start: "16:00:00", end: "18:00:00" },
+];
+
 export default function CreateReservation() {
-  const { reservas, crearReserva, showToast } = useApp();
+  const { showToast } = useApp();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [salas, setSalas] = useState<Sala[]>([]);
+  const [salas, setSalas] = useState<Space[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [salaId, setSalaId] = useState<number | "">("");
+  const [salaId, setSalaId] = useState("");
   const [fecha, setFecha] = useState("");
-  const [timeSlot, setTimeSlot] = useState("09:00-11:00");
+  const [slotIndex, setSlotIndex] = useState(1);
+  const [purpose, setPurpose] = useState("");
+  const [attendeeCount, setAttendeeCount] = useState(1);
+  const [userProgram, setUserProgram] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const cargar = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fakeApi.obtenerSalas();
+      const data = await getSpaces();
       setSalas(data);
-      const requestedRaw = searchParams.get("salaId");
-      const requestedId = requestedRaw ? Number(requestedRaw) : NaN;
-      const requestedSala = Number.isFinite(requestedId)
-        ? data.find((s) => s.id === requestedId)
+      const preselected = searchParams.get("spaceId");
+      const match = preselected
+        ? data.find((s) => s.id_space === preselected && s.isActive)
         : undefined;
-      setSalaId((prev) => {
-        if (prev !== "") return prev;
-        if (requestedSala) return requestedSala.id;
-        if (!data.length) return "";
-        const firstDisp = data.find((s) => s.estado === "DISPONIBLE");
-        return (firstDisp ?? data[0]).id;
-      });
+      const first = match ?? data.find((s) => s.isActive);
+      if (first) setSalaId(first.id_space);
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "No se pudieron cargar los espacios."
-      );
+      setError(e instanceof Error ? e.message : "No se pudieron cargar los espacios.");
     } finally {
       setLoading(false);
     }
@@ -45,109 +49,152 @@ export default function CreateReservation() {
     void cargar();
   }, [cargar]);
 
-  function enviar(e: React.FormEvent) {
+  async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    const id = Number(salaId);
-    const sala = salas.find((s) => s.id === id);
-    if (!sala || !fecha || !timeSlot) return;
-    if (sala.estado === "MANTENIMIENTO") {
-      showToast("Ese espacio está en mantenimiento.", "error");
-      return;
+    if (!salaId || !fecha || !purpose || !userProgram) return;
+    setSubmitting(true);
+    try {
+      const slot = TIME_SLOTS[slotIndex];
+      await createReservation({
+        spaceId: salaId,
+        date: fecha,
+        startTime: slot.start,
+        endTime: slot.end,
+        purpose,
+        attendeeCount,
+        userProgram,
+      });
+      showToast("Reserva creada correctamente.", "success");
+      navigate("/reservations");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error al crear la reserva.";
+      showToast(msg, "error");
+    } finally {
+      setSubmitting(false);
     }
-    const conflicto = reservas.some(
-      (r) => r.sala.id === sala.id && r.fecha === fecha && r.timeSlot === timeSlot
-    );
-    if (conflicto) {
-      showToast(
-        "Ya existe una reserva para esa sala, fecha y tiempo de horario.",
-        "error"
-      );
-      return;
-    }
-    crearReserva(sala, fecha, timeSlot);
   }
 
   if (loading) {
     return (
-      <div className="p-6 max-w-lg mx-auto">
-        <p role="status">Cargando espacios</p>
+      <div className="page">
+        <p className="state-loading" role="status">
+          Cargando espacios…
+        </p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-6 max-w-lg mx-auto" role="alert">
-        <p className="text-red-400 mb-4">{error}</p>
-        <button type="button" onClick={() => cargar()}>
-          Reintentar
-        </button>
+      <div className="page" role="alert">
+        <div className="alert-error">
+          <p>{error}</p>
+          <button type="button" onClick={() => void cargar()}>
+            Reintentar
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold mb-2">Nueva reserva</h1>
-      <p className="text-sm text-muted-foreground mb-6">
-        Elige espacio, día y tiempo. Las reservas quedan{" "}
-        <strong>pendientes</strong> hasta que un admin las apruebe.
-      </p>
+    <div className="page max-w-lg mx-auto">
+      <header className="page-header">
+        <h1 className="page-title">Nueva reserva</h1>
+        <p className="page-subtitle">
+          Las reservas quedan pendientes hasta que un administrador las apruebe, si el
+          espacio lo requiere.
+        </p>
+      </header>
 
-      <form onSubmit={enviar} className="flex flex-col gap-4">
-        <div>
-          <label htmlFor="cr-sala" className="block text-sm font-medium mb-1">
-            Espacio
+      <section className="card card--static">
+        <form onSubmit={enviar} className="form--plain flex flex-col gap-4">
+          <label className="flex flex-col gap-1">
+            <span>Espacio</span>
+            <select
+              id="cr-sala"
+              value={salaId}
+              onChange={(e) => setSalaId(e.target.value)}
+              required
+            >
+              {salas.map((s) => (
+                <option key={s.id_space} value={s.id_space}>
+                  {s.name} — {s.building} (cap. {s.capacity})
+                </option>
+              ))}
+            </select>
           </label>
-          <select
-            id="cr-sala"
-            value={salaId === "" ? "" : String(salaId)}
-            onChange={(e) =>
-              setSalaId(e.target.value ? Number(e.target.value) : "")
-            }
-            required
-          >
-            {salas.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nombre}
-                {s.estado === "MANTENIMIENTO" ? " (mantenimiento)" : ""}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="cr-fecha" className="block text-sm font-medium mb-1">
-            Fecha
+
+          <label className="flex flex-col gap-1">
+            <span>Fecha</span>
+            <input
+              id="cr-fecha"
+              type="date"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+              required
+            />
           </label>
-          <input
-            id="cr-fecha"
-            type="date"
-            value={fecha}
-            onChange={(e) => setFecha(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="cr-slot" className="block text-sm font-medium mb-1">
-            Tiempo entre sala
+
+          <label className="flex flex-col gap-1">
+            <span>Horario</span>
+            <select
+              id="cr-slot"
+              value={slotIndex}
+              onChange={(e) => setSlotIndex(Number(e.target.value))}
+            >
+              {TIME_SLOTS.map((s, i) => (
+                <option key={s.label} value={i}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
           </label>
-          <select
-            id="cr-slot"
-            value={timeSlot}
-            onChange={(e) => setTimeSlot(e.target.value)}
-          >
-            <option value="07:00-09:00">07:00–09:00</option>
-            <option value="09:00-11:00">09:00–11:00</option>
-            <option value="11:00-13:00">11:00–13:00</option>
-            <option value="14:00-16:00">14:00–16:00</option>
-            <option value="16:00-18:00">16:00–18:00</option>
-          </select>
-        </div>
-        <button type="submit">Crear reserva</button>
-      </form>
+
+          <label className="flex flex-col gap-1">
+            <span>Propósito</span>
+            <input
+              id="cr-purpose"
+              type="text"
+              placeholder="Ej: Clase de cálculo"
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value)}
+              required
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span>Tu programa</span>
+            <input
+              id="cr-program"
+              type="text"
+              placeholder="Ej: Ingeniería o Todos"
+              value={userProgram}
+              onChange={(e) => setUserProgram(e.target.value)}
+              required
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span>Número de asistentes</span>
+            <input
+              id="cr-attendees"
+              type="number"
+              min={1}
+              value={attendeeCount}
+              onChange={(e) => setAttendeeCount(Number(e.target.value))}
+              required
+            />
+          </label>
+
+          <button type="submit" disabled={submitting}>
+            {submitting ? "Creando…" : "Crear reserva"}
+          </button>
+        </form>
+      </section>
 
       <p className="mt-6 text-sm">
-        <Link to="/" className="text-brand-700 underline">
+        <Link to="/" className="link-back">
           ← Volver a espacios
         </Link>
       </p>

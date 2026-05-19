@@ -1,28 +1,28 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Sala } from "../types/types";
-import { fakeApi } from "../fakeapi/FakeApi";
+import { getSpaces } from "../api/api";
 import SalaCard from "../componentes/SalaCard";
 import SpacesFilters from "../componentes/SpacesFilters";
+import { useApp } from "../context/AppContext";
+import { mapSpaceToListItem } from "../utils/spaceMapper";
 
 export default function HomePage() {
-  const [salas, setSalas] = useState<Sala[]>([]);
+  const { user } = useApp();
+  const [salas, setSalas] = useState(() => [] as ReturnType<typeof mapSpaceToListItem>[]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
-  const [tipoFiltro, setTipoFiltro] = useState<string>("");
+  const [tipoFiltro, setTipoFiltro] = useState("");
   const [soloDisponibles, setSoloDisponibles] = useState(false);
 
   const cargarSalas = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fakeApi.obtenerSalas();
-      setSalas(data);
+      const data = await getSpaces();
+      setSalas(data.map(mapSpaceToListItem));
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Error al cargar espacios."
-      );
+      setError(e instanceof Error ? e.message : "Error al cargar espacios.");
       setSalas([]);
     } finally {
       setLoading(false);
@@ -30,7 +30,7 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    cargarSalas();
+    void cargarSalas();
   }, [cargarSalas]);
 
   const filtradas = useMemo(() => {
@@ -38,9 +38,8 @@ export default function HomePage() {
       const matchNombre = s.nombre
         .toLowerCase()
         .includes(search.trim().toLowerCase());
-      const matchTipo = !tipoFiltro || s.tipo === tipoFiltro;
-      const matchDisp =
-        !soloDisponibles || s.estado === "DISPONIBLE";
+      const matchTipo = !tipoFiltro || s.tipo.toUpperCase() === tipoFiltro;
+      const matchDisp = !soloDisponibles || s.estado === "DISPONIBLE";
       return matchNombre && matchTipo && matchDisp;
     });
   }, [salas, search, tipoFiltro, soloDisponibles]);
@@ -52,12 +51,15 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="mb-2 text-2xl font-bold">Espacios disponibles</h1>
-      <p className="mb-6 text-sm text-muted-foreground">
-        Busca, filtra y reserva salas, laboratorios y auditorios (fake API
-        async).
-      </p>
+    <div className="page">
+      <header className="page-header">
+        <h1 className="page-title">Espacios disponibles</h1>
+        <p className="page-subtitle">
+          {user
+            ? "Busca, filtra y reserva salas, laboratorios y auditorios."
+            : "Explora los espacios disponibles. Para reservar debes iniciar sesión."}
+        </p>
+      </header>
 
       <SpacesFilters
         search={search}
@@ -71,25 +73,26 @@ export default function HomePage() {
       />
 
       {loading && (
-        <p className="py-8 text-center text-muted-foreground" role="status">
-          Cargando espacios
+        <p className="state-loading" role="status">
+          Cargando espacios…
         </p>
       )}
 
       {!loading && error && (
-        <div
-          className="rounded-lg border border-red-500/40 bg-red-950/30 p-4"
-          role="alert"
-        >
-          <p className="mb-2 font-medium text-red-200">{error}</p>
-          <button type="button" onClick={cargarSalas}>
+        <div className="alert-error" role="alert">
+          <p>{error}</p>
+          <pre className="text-xs mt-3 mb-3 opacity-80 overflow-x-auto">
+            cd BackendSalaFinder{"\n"}
+            dotnet run --launch-profile https
+          </pre>
+          <button type="button" onClick={() => void cargarSalas()}>
             Reintentar
           </button>
         </div>
       )}
 
-      {!loading && !error && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {!loading && !error && filtradas.length > 0 && (
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {filtradas.map((sala) => (
             <SalaCard key={sala.id} sala={sala} />
           ))}
@@ -97,7 +100,7 @@ export default function HomePage() {
       )}
 
       {!loading && !error && filtradas.length === 0 && (
-        <p className="py-8 text-center text-muted-foreground">
+        <p className="state-empty">
           No hay espacios que coincidan con los filtros.
         </p>
       )}

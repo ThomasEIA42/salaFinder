@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { Sala } from "../types/types";
-import { fakeApi } from "../fakeapi/FakeApi";
+import { getSpaceById } from "../api/api";
 import { useApp } from "../context/AppContext";
 import { etiquetaTipoSala } from "../utils/tipoSala";
 

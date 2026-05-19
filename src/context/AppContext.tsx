@@ -1,39 +1,26 @@
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
+  createContext, useCallback, useContext,
+  useMemo, useState, type ReactNode,
 } from "react";
-import type { Reserva, EstadoReserva } from "../types/types";
-import type { AuthUser } from "../fakeapi/FakeApi";
-import { fakeApi } from "../fakeapi/FakeApi";
-
-const RESERVAS_KEY = "salaFinder.reservas";
-
-function loadReservas(): Reserva[] {
-  try {
-    const raw = localStorage.getItem(RESERVAS_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as Reserva[];
-  } catch {
-    return [];
-  }
-}
+import {
+  login as apiLogin, register as apiRegister,
+  logout as apiLogout, getCurrentUser,
+  cancelReservation as apiCancel,
+  approveReservation as apiApprove,
+  rejectReservation as apiReject,
+  type AuthUser, type UserRole,
+} from "../api/api";
 
 type ToastState = { message: string; type: "success" | "error" } | null;
 
 type AppContextValue = {
   user: AuthUser | null;
-  setUser: (u: AuthUser | null) => void;
-  refreshUser: () => void;
-  reservas: Reserva[];
-  crearReserva: (sala: Reserva["sala"], fecha: string, timeSlot: string) => void;
-  cancelarReserva: (id: number) => void;
-  limpiarReservas: () => void;
-  setEstadoReserva: (id: number, estado: EstadoReserva) => void;
+  login: (email: string, password: string) => Promise<AuthUser>;
+  register: (email: string, password: string, role?: UserRole) => Promise<void>;
+  logout: () => void;
+  cancelReservation: (id: string) => Promise<void>;
+  approveReservation: (id: string) => Promise<void>;
+  rejectReservation: (id: string) => Promise<void>;
   toast: ToastState;
   showToast: (message: string, type?: "success" | "error") => void;
 };
@@ -41,89 +28,45 @@ type AppContextValue = {
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [reservas, setReservas] = useState<Reserva[]>(loadReservas);
-  const [user, setUserState] = useState<AuthUser | null>(() =>
-    fakeApi.getCurrentUser()
-  );
+  const [user, setUser] = useState<AuthUser | null>(() => getCurrentUser());
   const [toast, setToast] = useState<ToastState>(null);
 
-  useEffect(() => {
-    localStorage.setItem(RESERVAS_KEY, JSON.stringify(reservas));
-  }, [reservas]);
-
-  const setUser = useCallback((u: AuthUser | null) => {
-    setUserState(u);
+  const showToast = useCallback((message: string, type: "success" | "error" = "success") => {
+    setToast({ message, type });
+    window.setTimeout(() => setToast(null), 3800);
   }, []);
 
-  const refreshUser = useCallback(() => {
-    setUserState(fakeApi.getCurrentUser());
+  const login = useCallback(async (email: string, password: string) => {
+    const u = await apiLogin(email, password);
+    setUser(u);
+    return u;
   }, []);
 
-  const showToast = useCallback(
-    (message: string, type: "success" | "error" = "success") => {
-      setToast({ message, type });
-      window.setTimeout(() => setToast(null), 3800);
-    },
-    []
-  );
-
-  const crearReserva = useCallback(
-    (sala: Reserva["sala"], fecha: string, timeSlot: string) => {
-      const nueva: Reserva = {
-        id: Date.now(),
-        sala,
-        fecha,
-        timeSlot,
-        estado: "pendiente",
-      };
-      setReservas((prev) => [...prev, nueva]);
-      showToast("Reserva creada correctamente.", "success");
-    },
-    [showToast]
-  );
-
-  const cancelarReserva = useCallback((id: number) => {
-    setReservas((prev) => prev.filter((r) => r.id !== id));
+  const register = useCallback(async (email: string, password: string, role: UserRole = "Student") => {
+    await apiRegister(email, password, role);
   }, []);
 
-  const limpiarReservas = useCallback(() => setReservas([]), []);
+  const logout = useCallback(() => { apiLogout(); setUser(null); }, []);
 
-  const setEstadoReserva = useCallback((id: number, estado: EstadoReserva) => {
-    setReservas((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, estado } : r))
-    );
-  }, []);
+  const cancelReservation = useCallback(async (id: string) => {
+    await apiCancel(id); showToast("Reserva cancelada.", "success");
+  }, [showToast]);
 
-  const value = useMemo(
-    () => ({
-      user,
-      setUser,
-      refreshUser,
-      reservas,
-      crearReserva,
-      cancelarReserva,
-      limpiarReservas,
-      setEstadoReserva,
-      toast,
-      showToast,
-    }),
-    [
-      user,
-      setUser,
-      refreshUser,
-      reservas,
-      crearReserva,
-      cancelarReserva,
-      limpiarReservas,
-      setEstadoReserva,
-      toast,
-      showToast,
-    ]
-  );
+  const approveReservation = useCallback(async (id: string) => {
+    await apiApprove(id); showToast("Reserva aprobada.", "success");
+  }, [showToast]);
 
-  return (
-    <AppContext.Provider value={value}>{children}</AppContext.Provider>
-  );
+  const rejectReservation = useCallback(async (id: string) => {
+    await apiReject(id); showToast("Reserva rechazada.", "success");
+  }, [showToast]);
+
+  const value = useMemo(() => ({
+    user, login, register, logout,
+    cancelReservation, approveReservation, rejectReservation,
+    toast, showToast,
+  }), [user, login, register, logout, cancelReservation, approveReservation, rejectReservation, toast, showToast]);
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
 export function useApp() {

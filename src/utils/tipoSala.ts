@@ -1,8 +1,5 @@
-import type { TipoSala } from "../types/types";
-
-//da una etiqueta mas formal para cada tipo de sala
-export function etiquetaTipoSala(tipo: TipoSala): string {
-  switch (tipo) {
+export function etiquetaTipoSala(tipo: string): string {
+  switch (tipo.toUpperCase()) {
     case "SALON":
       return "Salón";
     case "LABORATORIO":
@@ -11,5 +8,16 @@ export function etiquetaTipoSala(tipo: TipoSala): string {
       return "Auditorio";
     default:
       return tipo;
+  }
+}
+
+export function heroTipoSala(tipo: string): string {
+  switch (tipo.toUpperCase()) {
+    case "LABORATORIO":
+      return "detail-hero--lab";
+    case "AUDITORIO":
+      return "detail-hero--auditorio";
+    default:
+      return "detail-hero--salon";
   }
 }

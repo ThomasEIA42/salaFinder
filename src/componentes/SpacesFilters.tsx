@@ -22,35 +22,25 @@ export default function SpacesFilters({
   onReset,
 }: Props) {
   return (
-    <div
-      className="mb-6 flex flex-col gap-4 rounded-lg border border-border bg-surface/50 p-4 md:flex-row md:flex-wrap md:items-end"
-      role="search"
-      aria-label="Filtros de espacios"
-    >
+    <div className="filters-panel" role="search" aria-label="Filtros de espacios">
       <div className="flex-1 min-w-[200px]">
-        <label htmlFor="filtro-busqueda" className="mb-1 block text-sm font-medium">
-          Buscar
-        </label>
+        <label htmlFor="filtro-busqueda">Buscar</label>
         <input
           id="filtro-busqueda"
           type="search"
           placeholder="Nombre del espacio…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full"
           autoComplete="off"
         />
       </div>
 
       <div className="w-full min-w-[140px] md:w-44">
-        <label htmlFor="filtro-tipo" className="mb-1 block text-sm font-medium">
-          Tipo
-        </label>
+        <label htmlFor="filtro-tipo">Tipo</label>
         <select
           id="filtro-tipo"
           value={tipoFiltro}
           onChange={(e) => setTipoFiltro(e.target.value)}
-          className="w-full"
         >
           <option value="">Todos</option>
           <option value="SALON">Salón</option>
@@ -59,7 +49,7 @@ export default function SpacesFilters({
         </select>
       </div>
 
-      <label className="flex cursor-pointer items-center gap-2 text-sm">
+      <label className="flex cursor-pointer items-center gap-2 text-sm !text-muted-foreground self-end pb-2">
         <input
           type="checkbox"
           checked={soloDisponibles}
@@ -68,18 +58,16 @@ export default function SpacesFilters({
         Solo disponibles
       </label>
 
-      <button
-        type="button"
-        onClick={onReset}
-        className="border border-border bg-transparent px-3 py-2 text-sm"
-      >
+      <button type="button" onClick={onReset} className="btn-ghost self-end">
         Reset
       </button>
 
-      <p className="text-sm text-muted-foreground md:ml-auto">
-        Resultados: {resultados}
+      <p className="text-sm text-muted-foreground md:ml-auto self-end pb-2">
+        <span className="font-semibold" style={{ color: "var(--text-main)" }}>
+          {resultados}
+        </span>{" "}
+        resultado{resultados !== 1 ? "s" : ""}
       </p>
     </div>
   );
 }
-

@@ -1,109 +1,81 @@
 import { BiBomb, BiLogIn, BiLogOut } from "react-icons/bi";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import { fakeApi } from "../fakeapi/FakeApi";
 
 export default function Navbar() {
-  const { user, setUser } = useApp();
+  const { user, logout } = useApp();
   const navigate = useNavigate();
 
-  const linkBase = "navLink";
-  const active = "navLinkActive";
-
   function handleLogout() {
-    fakeApi.logout();
-    setUser(null);
+    logout();
     navigate("/");
   }
 
+  function navClass(isActive: boolean) {
+    return isActive ? "navLink navLinkActive" : "navLink";
+  }
+
+  const roleLabel =
+    user?.role === "Admin"
+      ? "Admin"
+      : user?.role === "Staff"
+        ? "Staff"
+        : user
+          ? "Estudiante"
+          : null;
+
   return (
-    <header className="border-b border-border bg-surface">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-4">
-        <div className="flex items-center gap-2 text-text">
-          <BiBomb className="text-brand-700" aria-hidden />
-          <h2 className="text-lg font-semibold">Sala Finder</h2>
+    <header className="sf-header">
+      <div className="sf-header-inner">
+        <div className="sf-brand">
+          <span className="sf-logo" aria-hidden>
+            <BiBomb />
+          </span>
+          <div>
+            <h2 className="sf-brand-title">Sala Finder</h2>
+            {user ? (
+              <span className="sf-brand-meta">
+                {roleLabel} · {user.email}
+              </span>
+            ) : null}
+          </div>
         </div>
 
-        <nav
-          className="top-nav flex flex-wrap items-center gap-4 text-sm text-muted"
-          aria-label="Navegación principal"
-        >
-          <NavLink
-            to="/"
-            className={({ isActive }) =>
-              isActive ? `${linkBase} ${active}` : linkBase
-            }
-          >
+        <nav className="sf-nav" aria-label="Navegación principal">
+          <NavLink to="/" className={({ isActive }) => navClass(isActive)}>
             Espacios
           </NavLink>
-          <NavLink
-            to="/reservations"
-            className={({ isActive }) =>
-              isActive ? `${linkBase} ${active}` : linkBase
-            }
-          >
+          <NavLink to="/reservations" className={({ isActive }) => navClass(isActive)}>
             Mis reservaciones
           </NavLink>
-          <NavLink
-            to="/reservar"
-            className={({ isActive }) =>
-              isActive ? `${linkBase} ${active}` : linkBase
-            }
-          >
+          <NavLink to="/reservar" className={({ isActive }) => navClass(isActive)}>
             Nueva reserva
           </NavLink>
-          <NavLink
-            to="/dashboard"
-            className={({ isActive }) =>
-              isActive ? `${linkBase} ${active}` : linkBase
-            }
-          >
+          <NavLink to="/dashboard" className={({ isActive }) => navClass(isActive)}>
             Dashboard
           </NavLink>
-          <NavLink
-            to="/calendar"
-            className={({ isActive }) =>
-              isActive ? `${linkBase} ${active}` : linkBase
-            }
-          >
+          <NavLink to="/calendar" className={({ isActive }) => navClass(isActive)}>
             Calendario
           </NavLink>
 
-          {user?.role === "admin" && (
-            <NavLink
-              to="/audit"
-              className={({ isActive }) =>
-                isActive ? `${linkBase} ${active}` : linkBase
-              }
-            >
+          {user?.role === "Admin" && (
+            <NavLink to="/audit" className={({ isActive }) => navClass(isActive)}>
               Auditoría
             </NavLink>
           )}
 
           {user ? (
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="navButton navButton--ghost"
-            >
+            <button type="button" onClick={handleLogout} className="navButton navButton--ghost">
               <BiLogOut aria-hidden />
               Salir
             </button>
           ) : (
             <>
-              <NavLink
-                to="/login"
-                className="navButton navButton--ghost"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <BiLogIn aria-hidden />
-                  Log in
-                </span>
+              <NavLink to="/login" className="navButton navButton--ghost">
+                <BiLogIn aria-hidden />
+                Log in
               </NavLink>
-              <NavLink
-                to="/signup"
-                className="navButton navButton--primary"
-              >
+              <NavLink to="/signup" className="navButton navButton--primary">
                 Sign up
               </NavLink>
             </>
