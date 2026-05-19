@@ -3,9 +3,12 @@ import { FiUserPlus } from "react-icons/fi";
 import Button from "../componentes/Button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { LoginRedirectState } from "../utils/authRedirect";
-import { fakeApi } from "../fakeapi/FakeApi";
 import { useApp } from "../context/AppContext";
-import { EIA_EMAIL_DOMAIN, EIA_EMAIL_ERROR, isEmailEia } from "../utils/emailEia";
+import {
+  EIA_EMAIL_DOMAIN,
+  EIA_EMAIL_ERROR,
+  isEmailEia,
+} from "../utils/emailEia";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
@@ -13,7 +16,7 @@ export default function SignUpPage() {
   const [confirmPass, setConfirmPass] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { setUser, showToast } = useApp();
+  const { register, login, showToast } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const redirectFrom = (location.state as LoginRedirectState | null)?.from;
@@ -35,16 +38,15 @@ export default function SignUpPage() {
     setError(null);
     setLoading(true);
     try {
-      const user = await fakeApi.register(email.trim(), password);
-      setUser(user);
+      await register(email.trim(), password, "Student");
+      await login(email.trim(), password);
       showToast("Cuenta creada. Bienvenido.", "success");
       const destino = redirectFrom
         ? `${redirectFrom.pathname}${redirectFrom.search ?? ""}`
         : "/";
       navigate(destino, { replace: true });
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "No se pudo registrar.";
+      const msg = err instanceof Error ? err.message : "No se pudo registrar.";
       setError(msg);
       showToast(msg, "error");
     } finally {
@@ -74,10 +76,7 @@ export default function SignUpPage() {
           ).
         </p>
 
-        <form
-          className="form--plain mt-5 flex flex-col gap-4"
-          onSubmit={onSubmit}
-        >
+        <form className="form--plain mt-5 flex flex-col gap-4" onSubmit={onSubmit}>
           <label className="flex flex-col gap-1">
             <span>Email</span>
             <input
@@ -99,10 +98,11 @@ export default function SignUpPage() {
             <input
               type="password"
               autoComplete="new-password"
-              placeholder="••••••"
+              placeholder="Mínimo 8 caracteres"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={8}
               disabled={loading}
             />
           </label>

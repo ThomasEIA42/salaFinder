@@ -1,11 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 
-type Props = {
-  children: React.ReactNode;
-};
-
-export default function RequireAuth({ children }: Props) {
+export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user } = useApp();
   const location = useLocation();
 

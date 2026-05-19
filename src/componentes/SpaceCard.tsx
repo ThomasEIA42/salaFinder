@@ -1,19 +1,14 @@
 import { FiUsers, FiMapPin, FiInfo } from "react-icons/fi";
+import { Link } from "react-router-dom";
+import type { Space } from "../api/api";
 
 interface ISpaceCard {
-  space: {
-    id: string;
-    name: string;
-    type: string;
-    capacity: number;
-    building: string;
-    resources: string[];
-    requiresApproval: boolean;
-  };
-  onSelect: (id: string) => void;
+  space: Space;
 }
 
-export default function SpaceCard({ space, onSelect }: ISpaceCard) {
+export default function SpaceCard({ space }: ISpaceCard) {
+  const resources = space.resources.split(",").map((r) => r.trim()).filter(Boolean);
+
   return (
     <div className="border border-border bg-surface rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-3">
@@ -41,23 +36,25 @@ export default function SpaceCard({ space, onSelect }: ISpaceCard) {
         </div>
       </div>
 
-      <div className="mb-4">
-        <p className="text-xs font-semibold mb-2 uppercase text-gray-400">Recursos:</p>
-        <div className="flex flex-wrap gap-1">
-          {space.resources.map((res, index) => (
-            <span key={index} className="text-[11px] bg-gray-100 px-2 py-1 rounded border border-gray-200">
-              {res}
-            </span>
-          ))}
+      {resources.length > 0 && (
+        <div className="mb-4">
+          <p className="text-xs font-semibold mb-2 uppercase text-gray-400">Recursos:</p>
+          <div className="flex flex-wrap gap-1">
+            {resources.map((res) => (
+              <span key={res} className="text-[11px] bg-gray-100 px-2 py-1 rounded border border-gray-200">
+                {res}
+              </span>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      <button 
-        onClick={() => onSelect(space.id)}
-        className="w-full bg-brand-700 text-white py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all"
+      <Link
+        to={`/reservar?spaceId=${space.id_space}`}
+        className="block w-full bg-brand-700 text-white py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all text-center"
       >
         Reservar Espacio
-      </button>
+      </Link>
     </div>
   );
 }

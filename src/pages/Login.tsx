@@ -3,7 +3,6 @@ import { FiLogIn } from "react-icons/fi";
 import Button from "../componentes/Button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { LoginRedirectState } from "../utils/authRedirect";
-import { fakeApi } from "../fakeapi/FakeApi";
 import { useApp } from "../context/AppContext";
 import { EIA_EMAIL_DOMAIN } from "../utils/emailEia";
 
@@ -12,7 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { setUser, showToast } = useApp();
+  const { login, showToast } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const redirectFrom = (location.state as LoginRedirectState | null)?.from;
@@ -26,10 +25,9 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const user = await fakeApi.login(email.trim(), password);
-      setUser(user);
+      const user = await login(email.trim(), password);
       showToast(
-        user.role === "admin"
+        user.role === "Admin"
           ? "Sesión iniciada (administrador)."
           : "Sesión iniciada correctamente.",
         "success"
@@ -39,8 +37,7 @@ export default function LoginPage() {
         : "/";
       navigate(destino, { replace: true });
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "No se pudo iniciar sesión.";
+      const msg = err instanceof Error ? err.message : "No se pudo iniciar sesión.";
       setError(msg);
       showToast(msg, "error");
     } finally {
@@ -65,14 +62,11 @@ export default function LoginPage() {
         )}
 
         <p className="auth-hint text-sm text-muted-foreground">
-          Ingresa el correo con el que te registraste (
+          Usa el correo con el que te registraste (recomendado{" "}
           <strong>@{EIA_EMAIL_DOMAIN}</strong>).
         </p>
 
-        <form
-          className="form--plain mt-5 flex flex-col gap-4"
-          onSubmit={onSubmit}
-        >
+        <form className="form--plain mt-5 flex flex-col gap-4" onSubmit={onSubmit}>
           <label className="flex flex-col gap-1">
             <span>Email</span>
             <input
@@ -107,11 +101,7 @@ export default function LoginPage() {
           </Button>
           <p className="m-0 text-sm text-muted-foreground">
             ¿No tienes cuenta?{" "}
-            <Link
-              className="font-semibold"
-              to="/signup"
-              state={location.state}
-            >
+            <Link className="font-semibold" to="/signup" state={location.state}>
               Registrarse
             </Link>
           </p>

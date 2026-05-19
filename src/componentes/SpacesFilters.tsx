@@ -22,11 +22,7 @@ export default function SpacesFilters({
   onReset,
 }: Props) {
   return (
-    <div
-      className="filters-panel"
-      role="search"
-      aria-label="Filtros de espacios"
-    >
+    <div className="filters-panel" role="search" aria-label="Filtros de espacios">
       <div className="flex-1 min-w-[200px]">
         <label htmlFor="filtro-busqueda">Buscar</label>
         <input
