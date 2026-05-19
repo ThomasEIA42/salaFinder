@@ -1,5 +1,5 @@
 import {
-  createContext, useCallback, useContext,
+  createContext, useCallback, useContext, useEffect,
   useMemo, useState, type ReactNode,
 } from "react";
 import {
@@ -30,6 +30,12 @@ const AppContext = createContext<AppContextValue | null>(null);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => getCurrentUser());
   const [toast, setToast] = useState<ToastState>(null);
+
+  useEffect(() => {
+    const onExpired = () => setUser(null);
+    window.addEventListener("salaFinder:session-expired", onExpired);
+    return () => window.removeEventListener("salaFinder:session-expired", onExpired);
+  }, []);
 
   const showToast = useCallback((message: string, type: "success" | "error" = "success") => {
     setToast({ message, type });

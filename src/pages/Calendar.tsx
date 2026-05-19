@@ -9,7 +9,7 @@ import {
 } from "../api/api";
 import { useApp } from "../context/AppContext";
 
-const WEEKDAYS = ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"];
+const WEEKDAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -102,126 +102,104 @@ export default function Calendar() {
 
   if (!user) {
     return (
-      <div className="p-6">
-        <p>Debes iniciar sesión para ver el calendario.</p>
-        <Link to="/login" className="text-brand-700 underline">
-          Iniciar sesión
-        </Link>
+      <div className="page">
+        <p>Debes iniciar sesión.</p>
+        <Link to="/login">Iniciar sesión</Link>
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="p-6">
-        <p role="status">Cargando calendario…</p>
+      <div className="page">
+        <p>Cargando…</p>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-2">Calendario de reservas</h1>
-      <p className="text-sm text-muted-foreground mb-6">
-        Vista mensual de reservas por día y detalle de espacios ocupados.
-      </p>
+    <div className="page cal-simple">
+      <h1 className="page-title">Calendario</h1>
 
-      <div className="card calendar-card">
-        <div className="calendar-toolbar">
-          <button
-            type="button"
-            className="calendar-toolbar-btn"
-            onClick={() =>
-              setMonthCursor(
-                (d) => new Date(d.getFullYear(), d.getMonth() - 1, 1)
-              )
-            }
-          >
-            Mes anterior
-          </button>
-          <h2 className="text-lg font-semibold capitalize">{monthLabel(monthCursor)}</h2>
-          <button
-            type="button"
-            className="calendar-toolbar-btn"
-            onClick={() =>
-              setMonthCursor(
-                (d) => new Date(d.getFullYear(), d.getMonth() + 1, 1)
-              )
-            }
-          >
-            Mes siguiente
-          </button>
-        </div>
+      <div className="cal-simple-nav">
+        <button
+          type="button"
+          onClick={() =>
+            setMonthCursor(
+              (d) => new Date(d.getFullYear(), d.getMonth() - 1, 1)
+            )
+          }
+        >
+          ← Anterior
+        </button>
+        <strong className="cal-simple-month">{monthLabel(monthCursor)}</strong>
+        <button
+          type="button"
+          onClick={() =>
+            setMonthCursor(
+              (d) => new Date(d.getFullYear(), d.getMonth() + 1, 1)
+            )
+          }
+        >
+          Siguiente →
+        </button>
+      </div>
 
-        <div className="calendar-grid">
-          {WEEKDAYS.map((w) => (
-            <div key={w} className="calendar-head">
-              {w}
-            </div>
+      <table className="cal-simple-table">
+        <thead>
+          <tr>
+            {WEEKDAYS.map((w) => (
+              <th key={w}>{w}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: days.length / 7 }, (_, week) => (
+            <tr key={week}>
+              {days.slice(week * 7, week * 7 + 7).map((cell) => {
+                if (!cell.inMonth) {
+                  return <td key={cell.key} className="cal-simple-off" />;
+                }
+                const count = reservasPorFecha.get(cell.key)?.length ?? 0;
+                const selected = cell.key === fechaSeleccionada;
+                return (
+                  <td key={cell.key}>
+                    <button
+                      type="button"
+                      className={
+                        selected ? "cal-simple-day cal-simple-day--on" : "cal-simple-day"
+                      }
+                      onClick={() => setFechaSeleccionada(cell.key)}
+                    >
+                      {cell.day}
+                      {count > 0 ? ` (${count})` : ""}
+                    </button>
+                  </td>
+                );
+              })}
+            </tr>
           ))}
-          {days.map((cell) => {
-            if (!cell.inMonth) return <div key={cell.key} className="calendar-empty" />;
-            const count = reservasPorFecha.get(cell.key)?.length ?? 0;
-            const selected = cell.key === fechaSeleccionada;
-            return (
-              <button
-                key={cell.key}
-                type="button"
-                className={`calendar-day ${selected ? "calendar-day--active" : ""}`}
-                onClick={() => setFechaSeleccionada(cell.key)}
-              >
-                <span className="calendar-day-number">{cell.day}</span>
-                {count > 0 ? (
-                  <span className="calendar-day-count">
-                    {count} reserva{count > 1 ? "s" : ""}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
+        </tbody>
+      </table>
 
-        <div className="mt-4 flex items-end justify-between gap-3">
-          <h2 className="text-lg font-semibold">Reservas del día</h2>
-          <Link to="/reservations" className="btn-link text-sm">
-            Ir a mis reservaciones
-          </Link>
-        </div>
-
+      <section className="cal-simple-detail">
+        <h2>Reservas del {fechaSeleccionada}</h2>
         {reservasDelDia.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">
-            No hay reservas para esta fecha.
-          </p>
+          <p className="text-muted-foreground">Ninguna.</p>
         ) : (
-          <ul className="mt-3 space-y-2">
+          <ul>
             {reservasDelDia.map((r) => (
-              <li
-                key={r.id_reservation}
-                className="rounded border border-border bg-surface p-3"
-              >
-                <p className="text-sm font-medium">
-                  {r.space?.name ?? r.spaceId} — {formatApiTime(r.startTime)}–
-                  {formatApiTime(r.endTime)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Estado:{" "}
-                  <span
-                    className={`status-badge ${
-                      r.status === "Approved"
-                        ? "status-badge--ok"
-                        : r.status === "Rejected" || r.status === "Cancelled"
-                        ? "status-badge--warn"
-                        : ""
-                    }`}
-                  >
-                    {r.status}
-                  </span>
-                </p>
+              <li key={r.id_reservation}>
+                {formatApiTime(r.startTime)}–{formatApiTime(r.endTime)} —{" "}
+                {r.space?.name ?? "Sala"} ({r.status})
               </li>
             ))}
           </ul>
         )}
-      </div>
+        <p className="mt-4">
+          <Link to="/reservations">Mis reservaciones</Link>
+        </p>
+      </section>
     </div>
   );
 }

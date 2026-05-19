@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { getSpaces, createReservation, type Space } from "../api/api";
 import { useApp } from "../context/AppContext";
@@ -49,9 +49,43 @@ export default function CreateReservation() {
     void cargar();
   }, [cargar]);
 
+  const salaSeleccionada = useMemo(
+    () => salas.find((s) => s.id_space === salaId),
+    [salas, salaId]
+  );
+
+  const programasPermitidos = useMemo(() => {
+    if (!salaSeleccionada) return [] as string[];
+    return salaSeleccionada.allowedPrograms
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+  }, [salaSeleccionada]);
+
+  useEffect(() => {
+    if (programasPermitidos.length === 0) return;
+    const todos = programasPermitidos.find(
+      (p) => p.toLowerCase() === "todos"
+    );
+    setUserProgram((actual) => {
+      if (actual && programasPermitidos.some((p) => p.toLowerCase() === actual.toLowerCase())) {
+        return actual;
+      }
+      return todos ?? programasPermitidos[0];
+    });
+  }, [salaId, programasPermitidos]);
+
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     if (!salaId || !fecha || !purpose || !userProgram) return;
+    const sala = salas.find((s) => s.id_space === salaId);
+    if (sala && attendeeCount > sala.capacity) {
+      showToast(
+        `El espacio admite máximo ${sala.capacity} personas (pusiste ${attendeeCount}).`,
+        "error"
+      );
+      return;
+    }
     setSubmitting(true);
     try {
       const slot = TIME_SLOTS[slotIndex];
@@ -165,14 +199,21 @@ export default function CreateReservation() {
 
           <label className="flex flex-col gap-1">
             <span>Tu programa</span>
-            <input
+            <select
               id="cr-program"
-              type="text"
-              placeholder="Ej: Ingeniería o Todos"
               value={userProgram}
               onChange={(e) => setUserProgram(e.target.value)}
               required
-            />
+            >
+              {programasPermitidos.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+            <span className="text-xs text-muted-foreground">
+              Solo los programas autorizados para este espacio.
+            </span>
           </label>
 
           <label className="flex flex-col gap-1">

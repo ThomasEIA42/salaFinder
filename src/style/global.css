@@ -1496,3 +1496,107 @@ a:hover {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+/* Calendario simple */
+.cal-simple {
+  max-width: 640px;
+}
+
+.cal-simple-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+
+.cal-simple-nav button {
+  padding: 6px 10px;
+  font-size: 0.875rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cal-simple-month {
+  text-transform: capitalize;
+  font-size: 1rem;
+}
+
+.cal-simple-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+  font-size: 0.875rem;
+}
+
+.cal-simple-table th,
+.cal-simple-table td {
+  border: 1px solid var(--border-color);
+  text-align: center;
+  padding: 0;
+}
+
+.cal-simple-table th {
+  padding: 8px 4px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.cal-simple-off {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.cal-simple-day {
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 4px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  background-image: none;
+  color: var(--text-main);
+  font-size: 0.875rem;
+  font-weight: 400;
+  cursor: pointer;
+  box-shadow: none;
+  transform: none;
+}
+
+.cal-simple-day:hover:not(:disabled) {
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.cal-simple-day--on {
+  background: rgba(59, 130, 246, 0.25);
+  font-weight: 700;
+}
+
+.cal-simple-day--on:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.25);
+  box-shadow: none;
+  transform: none;
+}
+
+.cal-simple-detail h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.cal-simple-detail ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  margin-bottom: 8px;
+}
+
+.cal-simple-detail li {
+  margin-bottom: 6px;
+  font-size: 0.875rem;
+}
