@@ -1,45 +1,47 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { getSpaces, createReservation, type Space } from "../api/api";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import type { Sala } from "../types/types";
+import { fakeApi } from "../fakeapi/FakeApi";
 import { useApp } from "../context/AppContext";
-
-const TIME_SLOTS = [
-  { label: "07:00–09:00", start: "07:00:00", end: "09:00:00" },
-  { label: "09:00–11:00", start: "09:00:00", end: "11:00:00" },
-  { label: "11:00–13:00", start: "11:00:00", end: "13:00:00" },
-  { label: "14:00–16:00", start: "14:00:00", end: "16:00:00" },
-  { label: "16:00–18:00", start: "16:00:00", end: "18:00:00" },
-];
+import {
+  fechaHoyLocal,
+  FRANJAS_HORARIAS,
+  validarFechaHorarioReserva,
+} from "../utils/reservas";
 
 export default function CreateReservation() {
-  const { showToast } = useApp();
-  const navigate = useNavigate();
+  const { crearReserva, showToast } = useApp();
+  const hoy = fechaHoyLocal();
   const [searchParams] = useSearchParams();
-  const [salas, setSalas] = useState<Space[]>([]);
+  const [salas, setSalas] = useState<Sala[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [salaId, setSalaId] = useState("");
+  const [salaId, setSalaId] = useState<number | "">("");
   const [fecha, setFecha] = useState("");
-  const [slotIndex, setSlotIndex] = useState(1);
-  const [purpose, setPurpose] = useState("");
-  const [attendeeCount, setAttendeeCount] = useState(1);
-  const [userProgram, setUserProgram] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [timeSlot, setTimeSlot] = useState("09:00-11:00");
 
   const cargar = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getSpaces();
+      const data = await fakeApi.obtenerSalas();
       setSalas(data);
-      const preselected = searchParams.get("spaceId");
-      const match = preselected
-        ? data.find((s) => s.id_space === preselected && s.isActive)
+      const requestedRaw = searchParams.get("salaId");
+      const requestedId = requestedRaw ? Number(requestedRaw) : NaN;
+      const requestedSala = Number.isFinite(requestedId)
+        ? data.find((s) => s.id === requestedId)
         : undefined;
-      const first = match ?? data.find((s) => s.isActive);
-      if (first) setSalaId(first.id_space);
+      setSalaId((prev) => {
+        if (prev !== "") return prev;
+        if (requestedSala) return requestedSala.id;
+        if (!data.length) return "";
+        const firstDisp = data.find((s) => s.estado === "DISPONIBLE");
+        return (firstDisp ?? data[0]).id;
+      });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "No se pudieron cargar los espacios.");
+      setError(
+        e instanceof Error ? e.message : "No se pudieron cargar los espacios."
+      );
     } finally {
       setLoading(false);
     }
@@ -49,192 +51,107 @@ export default function CreateReservation() {
     void cargar();
   }, [cargar]);
 
-  const salaSeleccionada = useMemo(
-    () => salas.find((s) => s.id_space === salaId),
-    [salas, salaId]
-  );
-
-  const programasPermitidos = useMemo(() => {
-    if (!salaSeleccionada) return [] as string[];
-    return salaSeleccionada.allowedPrograms
-      .split(",")
-      .map((p) => p.trim())
-      .filter(Boolean);
-  }, [salaSeleccionada]);
-
-  useEffect(() => {
-    if (programasPermitidos.length === 0) return;
-    const todos = programasPermitidos.find(
-      (p) => p.toLowerCase() === "todos"
-    );
-    setUserProgram((actual) => {
-      if (actual && programasPermitidos.some((p) => p.toLowerCase() === actual.toLowerCase())) {
-        return actual;
-      }
-      return todos ?? programasPermitidos[0];
-    });
-  }, [salaId, programasPermitidos]);
-
-  async function enviar(e: React.FormEvent) {
+  function enviar(e: React.FormEvent) {
     e.preventDefault();
-    if (!salaId || !fecha || !purpose || !userProgram) return;
-    const sala = salas.find((s) => s.id_space === salaId);
-    if (sala && attendeeCount > sala.capacity) {
-      showToast(
-        `El espacio admite máximo ${sala.capacity} personas (pusiste ${attendeeCount}).`,
-        "error"
-      );
+    const id = Number(salaId);
+    const sala = salas.find((s) => s.id === id);
+    if (!sala || !fecha || !timeSlot) return;
+    if (sala.estado === "MANTENIMIENTO") {
+      showToast("Ese espacio está en mantenimiento.", "error");
       return;
     }
-    setSubmitting(true);
-    try {
-      const slot = TIME_SLOTS[slotIndex];
-      await createReservation({
-        spaceId: salaId,
-        date: fecha,
-        startTime: slot.start,
-        endTime: slot.end,
-        purpose,
-        attendeeCount,
-        userProgram,
-      });
-      showToast("Reserva creada correctamente.", "success");
-      navigate("/reservations");
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Error al crear la reserva.";
-      showToast(msg, "error");
-    } finally {
-      setSubmitting(false);
+    const validacion = validarFechaHorarioReserva(fecha, timeSlot);
+    if (!validacion.ok) {
+      showToast(validacion.message, "error");
+      return;
     }
+    crearReserva(sala, fecha, timeSlot);
   }
 
   if (loading) {
     return (
-      <div className="page">
-        <p className="state-loading" role="status">
-          Cargando espacios…
-        </p>
+      <div className="p-6 max-w-lg mx-auto">
+        <p role="status">Cargando espacios</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="page" role="alert">
-        <div className="alert-error">
-          <p>{error}</p>
-          <button type="button" onClick={() => void cargar()}>
-            Reintentar
-          </button>
-        </div>
+      <div className="p-6 max-w-lg mx-auto" role="alert">
+        <p className="text-red-400 mb-4">{error}</p>
+        <button type="button" onClick={() => cargar()}>
+          Reintentar
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="page max-w-lg mx-auto">
+    <div className="page max-w-lg">
       <header className="page-header">
         <h1 className="page-title">Nueva reserva</h1>
         <p className="page-subtitle">
-          Las reservas quedan pendientes hasta que un administrador las apruebe, si el
-          espacio lo requiere.
+        Elige espacio, día y tiempo. La solicitud queda{" "}
+        <strong>en espera de aprobación</strong> y solo se confirma cuando el
+        administrador la apruebe.
         </p>
       </header>
 
-      <section className="card card--static">
-        <form onSubmit={enviar} className="form--plain flex flex-col gap-4">
-          <label className="flex flex-col gap-1">
-            <span>Espacio</span>
-            <select
-              id="cr-sala"
-              value={salaId}
-              onChange={(e) => setSalaId(e.target.value)}
-              required
-            >
-              {salas.map((s) => (
-                <option key={s.id_space} value={s.id_space}>
-                  {s.name} — {s.building} (cap. {s.capacity})
-                </option>
-              ))}
-            </select>
+      <form onSubmit={enviar} className="flex flex-col gap-4">
+        <div>
+          <label htmlFor="cr-sala" className="block text-sm font-medium mb-1">
+            Espacio
           </label>
-
-          <label className="flex flex-col gap-1">
-            <span>Fecha</span>
-            <input
-              id="cr-fecha"
-              type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              required
-            />
+          <select
+            id="cr-sala"
+            value={salaId === "" ? "" : String(salaId)}
+            onChange={(e) =>
+              setSalaId(e.target.value ? Number(e.target.value) : "")
+            }
+            required
+          >
+            {salas.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.nombre}
+                {s.estado === "MANTENIMIENTO" ? " (mantenimiento)" : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="cr-fecha" className="block text-sm font-medium mb-1">
+            Fecha
           </label>
-
-          <label className="flex flex-col gap-1">
-            <span>Horario</span>
-            <select
-              id="cr-slot"
-              value={slotIndex}
-              onChange={(e) => setSlotIndex(Number(e.target.value))}
-            >
-              {TIME_SLOTS.map((s, i) => (
-                <option key={s.label} value={i}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
+          <input
+            id="cr-fecha"
+            type="date"
+            value={fecha}
+            onChange={(e) => setFecha(e.target.value)}
+            min={hoy}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="cr-slot" className="block text-sm font-medium mb-1">
+            Tiempo entre sala
           </label>
+          <select
+            id="cr-slot"
+            value={timeSlot}
+            onChange={(e) => setTimeSlot(e.target.value)}
+          >
+            {FRANJAS_HORARIAS.map((franja) => (
+              <option key={franja} value={franja}>
+                {franja.replace("-", "–")}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button type="submit">Enviar solicitud</button>
+      </form>
 
-          <label className="flex flex-col gap-1">
-            <span>Propósito</span>
-            <input
-              id="cr-purpose"
-              type="text"
-              placeholder="Ej: Clase de cálculo"
-              value={purpose}
-              onChange={(e) => setPurpose(e.target.value)}
-              required
-            />
-          </label>
-
-          <label className="flex flex-col gap-1">
-            <span>Tu programa</span>
-            <select
-              id="cr-program"
-              value={userProgram}
-              onChange={(e) => setUserProgram(e.target.value)}
-              required
-            >
-              {programasPermitidos.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-            <span className="text-xs text-muted-foreground">
-              Solo los programas autorizados para este espacio.
-            </span>
-          </label>
-
-          <label className="flex flex-col gap-1">
-            <span>Número de asistentes</span>
-            <input
-              id="cr-attendees"
-              type="number"
-              min={1}
-              value={attendeeCount}
-              onChange={(e) => setAttendeeCount(Number(e.target.value))}
-              required
-            />
-          </label>
-
-          <button type="submit" disabled={submitting}>
-            {submitting ? "Creando…" : "Crear reserva"}
-          </button>
-        </form>
-      </section>
-
-      <p className="mt-6 text-sm">
+      <p className="mt-6">
         <Link to="/" className="link-back">
           ← Volver a espacios
         </Link>

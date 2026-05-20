@@ -392,6 +392,18 @@ body::before {
   border: 1px solid rgba(251, 191, 36, 0.22);
 }
 
+.badge--pending {
+  background: rgba(96, 165, 250, 0.12);
+  color: #93c5fd;
+  border: 1px solid rgba(96, 165, 250, 0.22);
+}
+
+.badge--warn {
+  background: rgba(248, 113, 113, 0.12);
+  color: #fca5a5;
+  border: 1px solid rgba(248, 113, 113, 0.22);
+}
+
 /* Botones */
 button {
   font-family: inherit;

@@ -1,28 +1,30 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { getSpaces } from "../api/api";
+import type { Sala } from "../types/types";
+import { fakeApi } from "../fakeapi/FakeApi";
 import SalaCard from "../componentes/SalaCard";
 import SpacesFilters from "../componentes/SpacesFilters";
 import { useApp } from "../context/AppContext";
-import { mapSpaceToListItem } from "../utils/spaceMapper";
 
 export default function HomePage() {
   const { user } = useApp();
-  const [salas, setSalas] = useState(() => [] as ReturnType<typeof mapSpaceToListItem>[]);
+  const [salas, setSalas] = useState<Sala[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
-  const [tipoFiltro, setTipoFiltro] = useState("");
+  const [tipoFiltro, setTipoFiltro] = useState<string>("");
   const [soloDisponibles, setSoloDisponibles] = useState(false);
 
   const cargarSalas = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getSpaces();
-      setSalas(data.map(mapSpaceToListItem));
+      const data = await fakeApi.obtenerSalas();
+      setSalas(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al cargar espacios.");
+      setError(
+        e instanceof Error ? e.message : "Error al cargar espacios."
+      );
       setSalas([]);
     } finally {
       setLoading(false);
@@ -38,8 +40,9 @@ export default function HomePage() {
       const matchNombre = s.nombre
         .toLowerCase()
         .includes(search.trim().toLowerCase());
-      const matchTipo = !tipoFiltro || s.tipo.toUpperCase() === tipoFiltro;
-      const matchDisp = !soloDisponibles || s.estado === "DISPONIBLE";
+      const matchTipo = !tipoFiltro || s.tipo === tipoFiltro;
+      const matchDisp =
+        !soloDisponibles || s.estado === "DISPONIBLE";
       return matchNombre && matchTipo && matchDisp;
     });
   }, [salas, search, tipoFiltro, soloDisponibles]);
@@ -81,10 +84,6 @@ export default function HomePage() {
       {!loading && error && (
         <div className="alert-error" role="alert">
           <p>{error}</p>
-          <pre className="text-xs mt-3 mb-3 opacity-80 overflow-x-auto">
-            cd BackendSalaFinder{"\n"}
-            dotnet run --launch-profile https
-          </pre>
           <button type="button" onClick={() => void cargarSalas()}>
             Reintentar
           </button>

@@ -1,19 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  getSpaces,
-  getAllReservations,
-  formatApiDate,
-  formatApiTime,
-  type Space,
-  type Reservation,
-} from "../api/api";
+import type { Sala } from "../types/types";
+import { fakeApi } from "../fakeapi/FakeApi";
 import { useApp } from "../context/AppContext";
+import { Link } from "react-router-dom";
 
 export default function Dashboard() {
-  const { user } = useApp();
-  const [salas, setSalas] = useState<Space[]>([]);
-  const [reservas, setReservas] = useState<Reservation[]>([]);
+  const { reservas, solicitudes } = useApp();
+  const [salas, setSalas] = useState<Sala[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,17 +16,11 @@ export default function Dashboard() {
       setLoading(true);
       setError(null);
       try {
-        const [spacesData, resData] = await Promise.all([
-          getSpaces(),
-          user?.role === "Admin" ? getAllReservations() : Promise.resolve([]),
-        ]);
-        if (!cancelled) {
-          setSalas(spacesData);
-          setReservas(resData);
-        }
+        const data = await fakeApi.obtenerSalas();
+        if (!cancelled) setSalas(data);
       } catch (e) {
         if (!cancelled)
-          setError(e instanceof Error ? e.message : "Error al cargar datos.");
+          setError(e instanceof Error ? e.message : "Error al cargar salas.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -41,15 +28,14 @@ export default function Dashboard() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, []);
 
-  const stats = useMemo(
-    () => ({
-      pending: reservas.filter((r) => r.status === "Pending").length,
-      approved: reservas.filter((r) => r.status === "Approved").length,
-    }),
-    [reservas]
-  );
+  const stats = useMemo(() => {
+    const pendientes = solicitudes.filter((r) => r.estado === "pendiente").length;
+    const aprobadas = reservas.filter((r) => r.estado === "aprobada").length;
+    const rechazadas = solicitudes.filter((r) => r.estado === "rechazada").length;
+    return { pendientes, aprobadas, rechazadas };
+  }, [reservas, solicitudes]);
 
   if (loading) {
     return (
@@ -78,67 +64,78 @@ export default function Dashboard() {
     <div className="page">
       <header className="page-header">
         <h1 className="page-title">Dashboard</h1>
-        <p className="page-subtitle">Resumen rápido de salas y reservas.</p>
+        <p className="page-subtitle">
+          Resumen rápido de salas y reservas.
+        </p>
       </header>
 
       <div className="dashboard-stats">
         <section className="card stat-card card--static">
-          <p className="stat-label">Salas activas</p>
+          <p className="stat-label">Salas</p>
           <p className="stat-value">{salas.length}</p>
         </section>
         <section className="card stat-card card--static">
-          <p className="stat-label">Reservas totales</p>
+          <p className="stat-label">Reservas</p>
           <p className="stat-value">{reservas.length}</p>
         </section>
         <section className="card stat-card card--static">
           <p className="stat-label">Pendientes</p>
-          <p className="stat-value">{stats.pending}</p>
+          <p className="stat-value">{stats.pendientes}</p>
         </section>
         <section className="card stat-card card--static">
           <p className="stat-label">Aprobadas</p>
-          <p className="stat-value">{stats.approved}</p>
+          <p className="stat-value">{stats.aprobadas}</p>
         </section>
       </div>
 
-      {reservas.length > 0 && (
-        <section className="card card--static dashboard-recent">
-          <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
-            <div>
-              <h2 className="text-lg font-semibold">Reservas recientes</h2>
-              <p className="text-xs text-muted-foreground">Últimas 5 reservas.</p>
-            </div>
-            <Link to="/reservations" className="btn-link text-sm">
-              Ver todas
-            </Link>
+      <section className="card card--static dashboard-recent">
+        <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
+          <div>
+            <h2 className="text-lg font-semibold">Reservas recientes</h2>
+            <p className="text-xs text-muted-foreground">
+              Últimas 5 reservas guardadas en tu navegador.
+            </p>
           </div>
-          <div className="audit-table-wrap">
+          <Link to="/reservations" className="text-sm text-brand-700 font-semibold">
+            Ver todas →
+          </Link>
+        </div>
+
+        {reservas.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Aún no hay reservas.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Espacio</th>
+                  <th>Sala</th>
                   <th>Fecha</th>
-                  <th>Horario</th>
+                  <th>Franja</th>
                   <th>Estado</th>
                 </tr>
               </thead>
               <tbody>
-                {reservas.slice(0, 5).map((r) => (
-                  <tr key={r.id_reservation}>
-                    <td>{r.space?.name ?? r.spaceId}</td>
-                    <td>{formatApiDate(r.date)}</td>
-                    <td>
-                      {formatApiTime(r.startTime)} – {formatApiTime(r.endTime)}
-                    </td>
-                    <td>
-                      <span className="badge badge--warning">{r.status}</span>
-                    </td>
-                  </tr>
-                ))}
+                {reservas
+                  .slice()
+                  .sort((a, b) => b.id - a.id)
+                  .slice(0, 5)
+                  .map((r) => (
+                    <tr key={r.id}>
+                      <td>{r.sala.nombre}</td>
+                      <td className="text-muted-foreground">{r.fecha}</td>
+                      <td className="text-muted-foreground">{r.timeSlot}</td>
+                      <td>
+                        <span className="badge badge--success">{r.estado}</span>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
-        </section>
-      )}
+        )}
+      </section>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { FiLogIn } from "react-icons/fi";
 import Button from "../componentes/Button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { LoginRedirectState } from "../utils/authRedirect";
+import { fakeApi } from "../fakeapi/FakeApi";
 import { useApp } from "../context/AppContext";
 import { EIA_EMAIL_DOMAIN } from "../utils/emailEia";
 
@@ -11,7 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { login, showToast } = useApp();
+  const { setUser, showToast } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const redirectFrom = (location.state as LoginRedirectState | null)?.from;
@@ -25,19 +26,22 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const user = await login(email.trim(), password);
-      showToast(
-        user.role === "Admin"
+      const user = await fakeApi.login(email.trim(), password.trim());
+      setUser(user);
+      const msgToast =
+        user.role === "admin"
           ? "Sesión iniciada (administrador)."
-          : "Sesión iniciada correctamente.",
-        "success"
-      );
+          : user.role === "profesor"
+          ? "Sesión iniciada (profesor)."
+          : "Sesión iniciada (estudiante).";
+      showToast(msgToast, "success");
       const destino = redirectFrom
         ? `${redirectFrom.pathname}${redirectFrom.search ?? ""}`
         : "/";
       navigate(destino, { replace: true });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "No se pudo iniciar sesión.";
+      const msg =
+        err instanceof Error ? err.message : "No se pudo iniciar sesión.";
       setError(msg);
       showToast(msg, "error");
     } finally {
@@ -62,11 +66,26 @@ export default function LoginPage() {
         )}
 
         <p className="auth-hint text-sm text-muted-foreground">
-          Usa el correo con el que te registraste (recomendado{" "}
-          <strong>@{EIA_EMAIL_DOMAIN}</strong>).
+          Estudiantes y profesores: correo <strong>@{EIA_EMAIL_DOMAIN}</strong>.
         </p>
+        <details className="auth-hint text-sm text-muted-foreground mt-2">
+          <summary className="cursor-pointer font-medium">
+            Cuentas de demostración
+          </summary>
+          <ul className="mt-2 space-y-1" style={{ listStyle: "disc", paddingLeft: "1.25rem" }}>
+            <li>
+              Admin: <code>admin@test.com</code> / <code>Hola1234#</code>
+            </li>
+            <li>
+              Profesor: <code>profesor@eia.edu.co</code> / <code>Profesor1234#</code>
+            </li>
+          </ul>
+        </details>
 
-        <form className="form--plain mt-5 flex flex-col gap-4" onSubmit={onSubmit}>
+        <form
+          className="form--plain mt-5 flex flex-col gap-4"
+          onSubmit={onSubmit}
+        >
           <label className="flex flex-col gap-1">
             <span>Email</span>
             <input
@@ -101,7 +120,11 @@ export default function LoginPage() {
           </Button>
           <p className="m-0 text-sm text-muted-foreground">
             ¿No tienes cuenta?{" "}
-            <Link className="font-semibold" to="/signup" state={location.state}>
+            <Link
+              className="font-semibold"
+              to="/signup"
+              state={location.state}
+            >
               Registrarse
             </Link>
           </p>
