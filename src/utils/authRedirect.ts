@@ -4,9 +4,9 @@ export type LoginRedirectState = {
   from: Pick<Location, "pathname" | "search">;
 };
 
-export function reservarReturnTo(spaceId?: string): LoginRedirectState["from"] {
-  return spaceId != null
-    ? { pathname: "/reservar", search: `?spaceId=${spaceId}` }
+export function reservarReturnTo(salaId?: number | string): LoginRedirectState["from"] {
+  return salaId != null
+    ? { pathname: "/reservar", search: `?salaId=${salaId}` }
     : { pathname: "/reservar", search: "" };
 }
 

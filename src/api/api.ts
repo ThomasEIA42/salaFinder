@@ -15,6 +15,7 @@ function saveToken(token: string) {
 function clearSession() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  window.dispatchEvent(new Event("salaFinder:session-expired"));
 }
 
 function headers(extra: Record<string, string> = {}): Record<string, string> {
@@ -33,6 +34,12 @@ function friendlyStatusMessage(status: number, text: string): string | null {
   }
   if (status === 502 || status === 503 || status === 504) {
     return "El servidor no está disponible. Comprueba que el backend esté en ejecución.";
+  }
+  if (status === 401) {
+    return "No se pudo autenticar la petición. Cierra sesión, vuelve a entrar y reinicia npm run dev si acabas de cambiar el proxy.";
+  }
+  if (status === 403) {
+    return "No tienes permiso para esta acción.";
   }
   return null;
 }
@@ -142,10 +149,17 @@ export async function login(email: string, password: string): Promise<AuthUser> 
 
   // JWT para obtener el usuario
   const payload = parseJwt(token);
+  const roleClaim =
+    payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ??
+    payload.role;
   const user: AuthUser = {
-    id: payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] ?? "",
-    email: payload["email"] ?? email,
-    role: (payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ?? "Student") as UserRole,
+    id: String(
+      payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] ??
+        payload.sub ??
+        ""
+    ),
+    email: String(payload["email"] ?? email),
+    role: String(roleClaim ?? "Student") as UserRole,
   };
 
   localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -164,6 +178,11 @@ export function logout(): void {
 }
 
 export function getCurrentUser(): AuthUser | null {
+  const token = getToken();
+  if (!token || !isTokenValid(token)) {
+    clearSession();
+    return null;
+  }
   const raw = localStorage.getItem(USER_KEY);
   if (!raw) return null;
   try {
@@ -271,11 +290,18 @@ export function formatApiDate(value: string): string {
   return value.slice(0, 10);
 }
 
-function parseJwt(token: string): Record<string, string> {
+function parseJwt(token: string): Record<string, string | number> {
   try {
     const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-    return JSON.parse(atob(base64)) as Record<string, string>;
+    return JSON.parse(atob(base64)) as Record<string, string | number>;
   } catch {
     return {};
   }
+}
+
+function isTokenValid(token: string): boolean {
+  const payload = parseJwt(token);
+  const exp = payload.exp;
+  if (typeof exp !== "number") return true;
+  return Date.now() < exp * 1000;
 }

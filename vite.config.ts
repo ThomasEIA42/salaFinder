@@ -9,7 +9,8 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:5298",
+        // HTTPS directo: evita el 307 de http://5298 que quita el JWT y da 401.
+        target: "https://localhost:7060",
         changeOrigin: true,
         secure: false,
       },

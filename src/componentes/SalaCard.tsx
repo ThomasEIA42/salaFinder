@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
-import type { SpaceListItem } from "../utils/spaceMapper";
+import type { Sala } from "../types/types";
 import { useApp } from "../context/AppContext";
 import { loginRedirectState, reservarReturnTo } from "../utils/authRedirect";
 import { etiquetaTipoSala } from "../utils/tipoSala";
 
-export default function SalaCard({ sala }: { sala: SpaceListItem }) {
+export default function SalaCard({ sala }: { sala: Sala }) {
   const { user } = useApp();
   const disponible = sala.estado === "DISPONIBLE";
 
@@ -27,11 +27,7 @@ export default function SalaCard({ sala }: { sala: SpaceListItem }) {
       </div>
 
       <p className="text-sm text-muted-foreground mb-1">
-        Capacidad:{" "}
-        <strong className="font-medium" style={{ color: "var(--text-main)" }}>
-          {sala.capacidad}
-        </strong>{" "}
-        personas
+        Capacidad: <strong className="font-medium" style={{ color: "var(--text-main)" }}>{sala.capacidad}</strong> personas
       </p>
       <p className="text-xs text-muted-foreground mb-4">{sala.edificio}</p>
 
@@ -44,7 +40,7 @@ export default function SalaCard({ sala }: { sala: SpaceListItem }) {
         </Link>
         {disponible ? (
           user ? (
-            <Link to={`/reservar?spaceId=${sala.id}`} className="btn-link">
+            <Link to={`/reservar?salaId=${sala.id}`} className="btn-link">
               Reservar
             </Link>
           ) : (

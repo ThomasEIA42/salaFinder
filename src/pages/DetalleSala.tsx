@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   FiAlertTriangle,
   FiBookOpen,
+  FiCalendar,
   FiCheckCircle,
+  FiClock,
   FiCpu,
   FiLayers,
   FiMapPin,
@@ -11,15 +13,16 @@ import {
   FiShield,
   FiUsers,
 } from "react-icons/fi";
-import { getSpaceById } from "../api/api";
+import type { Sala, TipoSala } from "../types/types";
+import { fakeApi } from "../fakeapi/FakeApi";
 import { useApp } from "../context/AppContext";
 import { loginRedirectState, reservarReturnTo } from "../utils/authRedirect";
-import { mapSpaceToListItem, type SpaceListItem } from "../utils/spaceMapper";
 import { etiquetaTipoSala, heroTipoSala } from "../utils/tipoSala";
+import { etiquetaEstadoReserva, fechaHoyLocal } from "../utils/reservas";
 
-function IconoTipo({ tipo }: { tipo: string }) {
+function IconoTipo({ tipo }: { tipo: TipoSala }) {
   const className = "detail-hero-icon";
-  switch (tipo.toUpperCase()) {
+  switch (tipo) {
     case "LABORATORIO":
       return <FiCpu className={className} aria-hidden />;
     case "AUDITORIO":
@@ -29,20 +32,23 @@ function IconoTipo({ tipo }: { tipo: string }) {
   }
 }
 
-const GUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 export default function DetalleSala() {
   const { id } = useParams();
-  const { user, showToast } = useApp();
+  const { user, crearReserva, reservas, showToast } = useApp();
   const navigate = useNavigate();
-  const [sala, setSala] = useState<SpaceListItem | null>(null);
+  const hoy = fechaHoyLocal();
+  const [sala, setSala] = useState<Sala | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [fecha, setFecha] = useState("");
+  const [timeSlot, setTimeSlot] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+
   useEffect(() => {
-    if (!id || !GUID_RE.test(id)) {
-      setError("ID de espacio no válido.");
+    const numId = Number(id);
+    if (!id || Number.isNaN(numId)) {
+      setError("ID de sala no válido.");
       setLoading(false);
       return;
     }
@@ -51,12 +57,12 @@ export default function DetalleSala() {
       setLoading(true);
       setError(null);
       try {
-        const space = await getSpaceById(id);
-        if (!cancelled) setSala(mapSpaceToListItem(space));
+        const s = await fakeApi.obtenerSalaPorId(numId);
+        if (!cancelled) setSala(s);
       } catch (e) {
         if (!cancelled)
           setError(
-            e instanceof Error ? e.message : "No se pudo cargar el espacio."
+            e instanceof Error ? e.message : "No se pudo cargar la sala."
           );
       } finally {
         if (!cancelled) setLoading(false);
@@ -66,6 +72,19 @@ export default function DetalleSala() {
       cancelled = true;
     };
   }, [id]);
+
+  const reservasSala = useMemo(() => {
+    if (!sala) return [];
+    return reservas
+      .filter((r) => r.sala.id === sala.id)
+      .slice()
+      .sort((a, b) => (a.fecha > b.fecha ? 1 : a.fecha < b.fecha ? -1 : 0));
+  }, [reservas, sala]);
+
+  const proximasReservas = useMemo(
+    () => reservasSala.filter((r) => r.fecha >= hoy).slice(0, 5),
+    [reservasSala, hoy]
+  );
 
   function irAReservar() {
     if (!sala) return;
@@ -77,10 +96,22 @@ export default function DetalleSala() {
       return;
     }
     if (sala.estado === "MANTENIMIENTO") {
-      showToast("No se puede reservar: espacio en mantenimiento.", "error");
+      showToast("No se puede reservar: sala en mantenimiento.", "error");
       return;
     }
-    navigate(`/reservar?spaceId=${sala.id}`);
+    setFecha("");
+    setTimeSlot("");
+    setModalOpen(true);
+  }
+
+  function confirmar() {
+    if (!user) {
+      showToast("Inicia sesión para reservar.", "error");
+      return;
+    }
+    if (!sala || !fecha || !timeSlot) return;
+    crearReserva(sala, fecha, timeSlot);
+    setModalOpen(false);
   }
 
   if (loading) {
@@ -104,7 +135,7 @@ export default function DetalleSala() {
     return (
       <div className="page detail-page" role="alert">
         <div className="alert-error">
-          <p>{error || "Espacio no encontrado."}</p>
+          <p>{error || "Sala no encontrada."}</p>
         </div>
         <Link to="/" className="link-back mt-4 inline-block">
           ← Volver al listado
@@ -169,6 +200,14 @@ export default function DetalleSala() {
               </div>
             </article>
             <article className="detail-stat">
+              <FiCalendar className="detail-stat-icon" aria-hidden />
+              <div>
+                <p className="detail-stat-label">Reservas</p>
+                <p className="detail-stat-value">{reservasSala.length}</p>
+                <p className="detail-stat-hint">registradas</p>
+              </div>
+            </article>
+            <article className="detail-stat">
               <FiShield className="detail-stat-icon" aria-hidden />
               <div>
                 <p className="detail-stat-label">Aprobación</p>
@@ -208,6 +247,47 @@ export default function DetalleSala() {
               <p className="detail-empty-hint">Abierto a todos los programas.</p>
             )}
           </section>
+
+          <section className="card card--static detail-section">
+            <div className="detail-section-head">
+              <h2 className="detail-section-title">Próximas reservas</h2>
+              <span className="detail-section-count">
+                {proximasReservas.length} en calendario
+              </span>
+            </div>
+            {proximasReservas.length === 0 ? (
+              <p className="detail-empty-hint">
+                No hay reservas próximas para este espacio. ¡Sé el primero en
+                reservar!
+              </p>
+            ) : (
+              <ul className="detail-reservas-list">
+                {proximasReservas.map((r) => (
+                  <li key={r.id} className="detail-reserva-row">
+                    <div className="detail-reserva-fecha">
+                      <FiCalendar aria-hidden />
+                      <span>{r.fecha}</span>
+                    </div>
+                    <div className="detail-reserva-slot">
+                      <FiClock aria-hidden />
+                      <span>{r.timeSlot}</span>
+                    </div>
+                    <span
+                      className={`badge ${
+                        r.estado === "aprobada"
+                          ? "badge--success"
+                          : r.estado === "pendiente"
+                            ? "badge--warning"
+                            : "badge--warning"
+                      }`}
+                    >
+                      {etiquetaEstadoReserva(r.estado)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </div>
 
         <aside className="detail-aside">
@@ -215,7 +295,7 @@ export default function DetalleSala() {
             <h2 className="detail-booking-title">Reservar espacio</h2>
             <p className="detail-booking-desc">
               {disponible
-                ? "Completa el formulario de reserva con fecha y horario."
+                ? "Elige fecha y franja horaria. La reserva quedará pendiente hasta aprobación."
                 : "Este espacio no acepta reservas mientras esté en mantenimiento."}
             </p>
 
@@ -224,13 +304,13 @@ export default function DetalleSala() {
                 <ul className="detail-booking-perks">
                   <li>
                     <FiCheckCircle aria-hidden />
-                    Reserva vinculada a tu cuenta
+                    Confirmación por correo (demo)
                   </li>
                   <li>
                     <FiCheckCircle aria-hidden />
                     {sala.requiereAprobacion
                       ? "Requiere aprobación de admin"
-                      : "Confirmación según política del espacio"}
+                      : "Confirmación inmediata"}
                   </li>
                 </ul>
                 <button
@@ -240,12 +320,20 @@ export default function DetalleSala() {
                 >
                   {user ? "Reservar ahora" : "Iniciar sesión para reservar"}
                 </button>
-                {user && (
+                {user ? (
                   <Link
-                    to={`/reservar?spaceId=${sala.id}`}
+                    to={`/reservar?salaId=${sala.id}`}
                     className="detail-booking-link"
                   >
                     Ir al formulario completo →
+                  </Link>
+                ) : (
+                  <Link
+                    to="/login"
+                    state={loginRedirectState(reservarReturnTo(sala.id))}
+                    className="detail-booking-link"
+                  >
+                    Iniciar sesión →
                   </Link>
                 )}
               </>
@@ -261,6 +349,65 @@ export default function DetalleSala() {
           </div>
         </aside>
       </div>
+
+      {modalOpen && (
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="detalle-modal-titulo"
+        >
+          <div className="modal-content detail-modal">
+            <h2 id="detalle-modal-titulo" className="detail-modal-title">
+              Reservar {sala.nombre}
+            </h2>
+            <p className="detail-modal-sub">
+              {etiquetaTipoSala(sala.tipo)} · {sala.edificio}
+            </p>
+            <div className="flex flex-col gap-4 mt-4">
+              <div>
+                <label htmlFor="det-fecha">Fecha</label>
+                <input
+                  id="det-fecha"
+                  type="date"
+                  value={fecha}
+                  onChange={(e) => setFecha(e.target.value)}
+                  min={hoy}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="det-slot">Franja horaria</label>
+                <select
+                  id="det-slot"
+                  value={timeSlot}
+                  onChange={(e) => setTimeSlot(e.target.value)}
+                  required
+                >
+                  <option value="">Selecciona…</option>
+                  <option value="07:00-09:00">07:00–09:00</option>
+                  <option value="09:00-11:00">09:00–11:00</option>
+                  <option value="11:00-13:00">11:00–13:00</option>
+                  <option value="14:00-16:00">14:00–16:00</option>
+                  <option value="16:00-18:00">16:00–18:00</option>
+                </select>
+              </div>
+              <div className="flex gap-2 justify-end pt-2">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => setModalOpen(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="button" onClick={confirmar}>
+                  Confirmar reserva
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
